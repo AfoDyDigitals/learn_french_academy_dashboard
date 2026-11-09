@@ -111,3 +111,11 @@ legend{font-weight:700;font-size:14px;padding:0 4px}
 .check input{width:auto}
 .barwrap{display:flex;gap:8px;align-items:center}
 h2{margin-bottom:8px}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 16px;align-items:end}
+.form-grid h2,.form-grid .note,.form-grid > div:last-child{grid-column:1/-1}
+.multi{display:flex;flex-wrap:wrap;gap:4px 16px;border:1px solid var(--line);border-radius:10px;padding:6px 12px;max-height:160px;overflow:auto}
+.field:has(.multi){grid-column:1/-1}
+td select,td input{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface);font:inherit;color:inherit}
+.link.danger{color:var(--red);font-weight:600}
+.meta{color:var(--muted);font-size:14px}

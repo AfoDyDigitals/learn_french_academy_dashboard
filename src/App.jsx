@@ -7,6 +7,7 @@ import Library from './pages/Library'
 import Classes from './pages/Classes'
 import Students from './pages/Students'
 import Report from './pages/Report'
+import Admin from './pages/Admin'
 
 const nav = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'Students'], ['/report', 'Class report']]
 
@@ -27,16 +28,18 @@ export default function App() {
 
   if (session === undefined) return null
   if (!session) return <Login />
+  if (!profile) return null // wait for role so /admin isn't redirected on reload
 
   const name = profile?.full_name || session.user.email
+  const isAdmin = profile?.role === 'admin'
   return (
     <div className="shell">
       <aside>
         <div className="brand"><img className="mark" src="/logo.png" alt="Learn French Academy logo" /><span>Learn French<br />Academy</span></div>
-        <nav>{nav.map(([to, label]) => <NavLink key={to} to={to} end>{label}</NavLink>)}</nav>
+        <nav>{[...nav, ...(isAdmin ? [['/admin', 'Admin']] : [])].map(([to, label]) => <NavLink key={to} to={to} end>{label}</NavLink>)}</nav>
         <div className="who">
           <div className="av">{name.slice(0, 2).toUpperCase()}</div>
-          <div><b>{name}</b><br />{profile?.role === 'admin' ? 'Admin' : 'Tutor'} · <button className="link" onClick={() => sb.auth.signOut()}>Sign out</button></div>
+          <div><b>{name}</b><br />{isAdmin ? 'Admin' : 'Tutor'} · <button className="link" onClick={() => sb.auth.signOut()}>Sign out</button></div>
         </div>
       </aside>
       <main>
@@ -46,6 +49,7 @@ export default function App() {
           <Route path="/classes" element={<Classes />} />
           <Route path="/students" element={<Students />} />
           <Route path="/report" element={<Report />} />
+          {isAdmin && <Route path="/admin" element={<Admin />} />}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
