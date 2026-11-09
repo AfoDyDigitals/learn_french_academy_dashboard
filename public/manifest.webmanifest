@@ -1,0 +1,9 @@
+{
+  "name": "Learn French Academy",
+  "short_name": "LFA Tutors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eaf1ff",
+  "theme_color": "#2563ff",
+  "icons": [{ "src": "/logo.png", "sizes": "240x240", "type": "image/png" }]
+}
