@@ -4,6 +4,7 @@ import { useRows, Lvl, fmtDay, fmtTime, State } from '../ui'
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'TCF']
 const TABS = ['Students', 'Classes', 'Resources', 'Payments', 'Reports', 'Tutors']
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // Class times are entered and shown in Lagos time (UTC+1, no daylight saving)
 const lagosToISO = v => new Date(`${v}:00+01:00`).toISOString()
 
@@ -22,7 +23,7 @@ export default function Admin() {
   )
 }
 
-// Small form helper: fields = [[key, label, type, options?]]
+// Small form helper: fields = [[key, label, type, options?, show?(values)]]
 function QuickForm({ title, fields, onSave, initial = {} }) {
   const [v, setV] = useState(initial)
   const [msg, setMsg] = useState('')
@@ -37,7 +38,7 @@ function QuickForm({ title, fields, onSave, initial = {} }) {
   return (
     <form className="panel form-grid" onSubmit={submit}>
       <h2>{title}</h2>
-      {fields.map(([k, label, type = 'text', opts]) => (
+      {fields.filter(f => !f[4] || f[4](v)).map(([k, label, type = 'text', opts]) => (
         <div className="field" key={k}>
           <label htmlFor={`f-${k}`}>{label}</label>
           {type === 'select' ? (
@@ -45,6 +46,11 @@ function QuickForm({ title, fields, onSave, initial = {} }) {
               <option value="">Choose…</option>
               {opts.map(o => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o}>{o}</option>)}
             </select>
+          ) : type === 'days' ? (
+            <div className="multi">{DAYS.map((d, i) => (
+              <label key={d} className="check"><input type="checkbox" checked={(v[k] || []).includes(i + 1)}
+                onChange={e => setV({ ...v, [k]: e.target.checked ? [...(v[k] || []), i + 1] : v[k].filter(x => x !== i + 1) })} /> {d}</label>
+            ))}</div>
           ) : type === 'multi' ? (
             <div className="multi">{opts.length ? opts.map(([id, name]) => (
               <label key={id} className="check"><input type="checkbox" checked={(v[k] || []).includes(id)}
@@ -71,8 +77,8 @@ function StudentsTab({ tutors, students, reloadStudents }) {
       <QuickForm title="Add student" initial={{ goal: 'general' }}
         fields={[['full_name', 'Full name'], ['email', 'Email', 'email'], ['phone', 'Phone'], ['country', 'Country'],
           ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TCF prep']]],
-          ['exam_date', 'TCF exam date', 'date'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)]]}
-        onSave={async v => { const { error } = await sb.from('students').insert(clean(v)); reloadStudents(); return error }} />
+          ['exam_date', 'TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)]]}
+        onSave={async v => { const { error } = await sb.from('students').insert(clean({ ...v, exam_date: v.goal === 'tcf' ? v.exam_date : null })); reloadStudents(); return error }} />
       <div className="panel scroll">
         <h2>All students</h2>
         <State rows={students} empty="No students yet." />
@@ -106,13 +112,45 @@ function ClassesTab({ tutors, students }) {
     reload()
   }
   async function remove(id) { await sb.from('classes').delete().eq('id', id); reload() }
+  const [scheds, , reloadScheds] = useRows(() => sb.from('schedules').select('*, profiles(full_name)').order('start_date', { ascending: false }))
+  const activeStudents = students.filter(s => s.status === 'active').map(s => [s.id, `${s.full_name} (${s.level})`])
+  async function saveSchedule(v) {
+    if (!v.weekdays?.length) return { message: 'Pick at least one class day.' }
+    const { data, error } = await sb.rpc('create_schedule', { p: { ...v, student_ids: v.student_ids || [] } })
+    if (error) return error
+    reload(); reloadScheds(); alertCount(data)
+  }
+  const [made, alertCount] = useState(null)
+  async function endSchedule(id) { await sb.rpc('end_schedule', { p_id: id }); reload(); reloadScheds() }
   return (
     <div className="grid">
-      <QuickForm title="Schedule class" initial={{ duration_min: 90 }}
+      <QuickForm title="Recurring schedule (set once per contract)" initial={{ duration_min: 90, weeks: 8, weekdays: [] }}
+        fields={[['title', 'Course name, e.g. A1 Evening'], ['level', 'Level', 'select', LEVELS], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)],
+          ['weekdays', 'Class days', 'days'], ['start_time', 'Start time (Lagos)', 'time'], ['duration_min', 'Duration (minutes)', 'number'],
+          ['start_date', 'Contract start date', 'date'], ['weeks', 'Contract length (weeks)', 'number'], ['meet_url', 'Google Meet link (same every class)', 'url'],
+          ['student_ids', 'Students', 'multi', activeStudents]]}
+        onSave={saveSchedule} />
+      {made !== null && <p className="note">{made} classes created for the whole contract.</p>}
+      <div className="panel scroll">
+        <h2>Active schedules</h2>
+        <State rows={scheds} empty="No recurring schedules yet." />
+        {scheds?.length > 0 && <table>
+          <thead><tr><th>Course</th><th>Tutor</th><th>Days</th><th>Time</th><th>Runs</th><th>Students</th><th></th></tr></thead>
+          <tbody>{scheds.map(s => {
+            const end = new Date(s.start_date); end.setDate(end.getDate() + s.weeks * 7 - 1)
+            return (
+              <tr key={s.id}><td><Lvl l={s.level} /> {s.title}</td><td>{s.profiles?.full_name || '–'}</td>
+                <td>{s.weekdays.map(d => DAYS[d - 1]).join(', ')}</td><td>{s.start_time.slice(0, 5)}</td>
+                <td>{s.start_date} → {end.toISOString().slice(0, 10)}</td><td>{s.student_ids.length}</td>
+                <td><button className="link danger" onClick={() => endSchedule(s.id)}>End early</button></td></tr>)
+          })}</tbody>
+        </table>}
+      </div>
+      <QuickForm title="One-off class (extra or make-up)" initial={{ duration_min: 90 }}
         fields={[['title', 'Topic'], ['level', 'Level', 'select', LEVELS], ['week_no', 'Week no.', 'number'],
           ['starts_at', 'Date and time (Lagos)', 'datetime-local'], ['duration_min', 'Duration (minutes)', 'number'],
           ['meet_url', 'Google Meet link', 'url'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)],
-          ['students', 'Students', 'multi', students.filter(s => s.status === 'active').map(s => [s.id, `${s.full_name} (${s.level})`])]]}
+          ['students', 'Students', 'multi', activeStudents]]}
         onSave={save} />
       <div className="panel scroll">
         <h2>Recent and upcoming classes</h2>
@@ -191,7 +229,7 @@ function ReportsTab() {
         <div className="row" key={r.id} style={{ alignItems: 'flex-start' }}>
           {r.classes && <Lvl l={r.classes.level} />}
           <div className="grow">
-            <b>{r.classes?.title}</b> <span className="meta">· {r.classes && fmtDay(r.classes.starts_at)} · {r.profiles?.full_name}</span>
+            <b>{r.classes?.title}</b> <span className="meta">· {r.classes && fmtDay(r.classes.starts_at)} · {r.profiles?.full_name}{r.duration_min ? ` · ${r.duration_min} min` : ''}</span>
             <div>{r.covered}</div>
             {r.homework && <div className="meta">Homework: {r.homework}</div>}
             {r.notes && <div className="note" style={{ marginTop: 6 }}>{r.notes}</div>}
