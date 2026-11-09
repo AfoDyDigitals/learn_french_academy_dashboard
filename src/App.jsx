@@ -8,12 +8,14 @@ import Classes from './pages/Classes'
 import Students from './pages/Students'
 import Report from './pages/Report'
 import Admin from './pages/Admin'
+import { enablePush, pushEnabled } from './push'
 
 const nav = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'Students'], ['/report', 'Class report']]
 
 export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(null)
+  const [push, setPush] = useState(null) // null = unknown, true = on, string = message
 
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => setSession(data.session))
@@ -26,6 +28,8 @@ export default function App() {
     sb.from('profiles').select('*').eq('id', session.user.id).single().then(({ data }) => setProfile(data))
   }, [session])
 
+  useEffect(() => { if (session) pushEnabled().then(on => on && setPush(true)) }, [session])
+
   if (session === undefined) return null
   if (!session) return <Login />
   if (!profile) return null // wait for role so /admin isn't redirected on reload
@@ -37,6 +41,11 @@ export default function App() {
       <aside>
         <div className="brand"><img className="mark" src="/logo.png" alt="Learn French Academy logo" /><span>Learn French<br />Academy</span></div>
         <nav>{[...nav, ...(isAdmin ? [['/admin', 'Admin']] : [])].map(([to, label]) => <NavLink key={to} to={to} end>{label}</NavLink>)}</nav>
+        <div className="pushbox">
+          {push === true ? <span>🔔 Notifications on</span>
+            : <button className="link" onClick={async () => { const m = await enablePush(); setPush(m.startsWith('Notifications are on') ? true : m) }}>Turn on notifications</button>}
+          {typeof push === 'string' && <small>{push}</small>}
+        </div>
         <div className="who">
           <div className="av">{name.slice(0, 2).toUpperCase()}</div>
           <div><b>{name}</b><br />{isAdmin ? 'Admin' : 'Tutor'} · <button className="link" onClick={() => sb.auth.signOut()}>Sign out</button></div>

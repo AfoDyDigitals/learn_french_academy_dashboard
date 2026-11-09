@@ -119,3 +119,8 @@ h2{margin-bottom:8px}
 td select,td input{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface);font:inherit;color:inherit}
 .link.danger{color:var(--red);font-weight:600}
 .meta{color:var(--muted);font-size:14px}
+
+.pushbox{margin-top:auto;display:flex;flex-direction:column;gap:4px;font-size:14px;color:#fff}
+.pushbox small{color:rgba(255,255,255,.8)}
+.pushbox + .who{margin-top:12px}
+@media (max-width:860px){.pushbox{margin-top:0;white-space:nowrap;flex:none}.pushbox small{white-space:normal;max-width:220px}}
