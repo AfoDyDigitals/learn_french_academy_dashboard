@@ -215,6 +215,10 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
 @keyframes slide{from{transform:translateX(40px);opacity:0}}
 @keyframes fade{from{opacity:0}}
 
+.creds{background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:12px 14px;font:14px/1.7 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;margin:0 0 8px}
+.created .form-actions{position:static;margin:0;padding:0;border:0}
+.promote{margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
+
 /* ---------- Toasts ---------- */
 .toasts{position:fixed;z-index:80;right:max(20px, env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
 .toast{display:flex;gap:10px;align-items:center;background:var(--ink);color:var(--surface);padding:12px 16px;border-radius:var(--r-sm);font-weight:600;box-shadow:var(--shadow-lg);animation:pop .2s ease;max-width:min(420px,calc(100vw - 32px))}
