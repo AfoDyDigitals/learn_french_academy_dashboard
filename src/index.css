@@ -136,10 +136,26 @@ td select,td input{border:1px solid var(--line);border-radius:8px;padding:6px 8p
 .drawer{display:contents}
 .menu-btn{display:none;place-items:center;width:44px;height:44px;border:0;border-radius:10px;background:var(--rail-soft);color:#fff;cursor:pointer}
 .menu-btn svg{width:24px;height:24px}
+/* Mobile: menu slides in from the left over a dimmed backdrop */
+.backdrop,.drawer-head{display:none}
 @media (max-width:860px){
   .menu-btn{display:grid}
-  .drawer{display:none;flex-basis:100%;flex-direction:column;gap:20px;padding-block:16px 8px;max-height:calc(100dvh - 70px - env(safe-area-inset-top,0px));overflow-y:auto}
-  .drawer[data-open="true"]{display:flex}
+  .drawer{display:flex;flex-direction:column;gap:20px;position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(300px,85vw);background:var(--rail);overflow-y:auto;
+    padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px));
+    transform:translateX(-105%);visibility:hidden;transition:transform .25s ease,visibility .25s}
+  .drawer[data-open="true"]{transform:none;visibility:visible;box-shadow:8px 0 30px rgba(0,0,0,.3)}
+  .backdrop{display:block;position:fixed;inset:0;z-index:35;background:rgba(10,15,40,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+  .backdrop[data-open="true"]{opacity:1;pointer-events:auto}
+  .drawer-head{display:flex;justify-content:space-between;align-items:center;color:#fff;font:700 18px var(--display)}
+  .drawer .pushbox{margin-top:auto}
+  .cols-4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 .pushbox{align-items:flex-start}
 .actions{white-space:nowrap}.actions .link{margin:0 6px 0 0}
+
+.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.filter-bar{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0 16px;padding-bottom:6px}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;grid-column:1/-1}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.confirm{border-color:var(--warn)}
+td select.pill{border:0;cursor:pointer;padding:4px 10px}
