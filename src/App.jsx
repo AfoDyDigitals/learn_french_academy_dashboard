@@ -8,6 +8,8 @@ import Classes from './pages/Classes'
 import Students from './pages/Students'
 import Report from './pages/Report'
 import Admin from './pages/Admin'
+import Account from './pages/Account'
+import SetPassword from './pages/SetPassword'
 import { enablePush, pushEnabled } from './push'
 
 const nav = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'Students'], ['/report', 'Class report']]
@@ -16,10 +18,12 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(null)
   const [push, setPush] = useState(null) // null = unknown, true = on, string = message
+  // True after opening a password reset link from email
+  const [recovery, setRecovery] = useState(() => window.location.hash.includes('type=recovery'))
 
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data } = sb.auth.onAuthStateChange((_e, s) => setSession(s))
+    const { data } = sb.auth.onAuthStateChange((e, s) => { setSession(s); if (e === 'PASSWORD_RECOVERY') setRecovery(true) })
     return () => data.subscription.unsubscribe()
   }, [])
 
@@ -32,6 +36,7 @@ export default function App() {
 
   if (session === undefined) return null
   if (!session) return <Login />
+  if (recovery) return <SetPassword onDone={() => setRecovery(false)} />
   if (!profile) return null // wait for role so /admin isn't redirected on reload
 
   const name = profile?.full_name || session.user.email
@@ -48,7 +53,7 @@ export default function App() {
         </div>
         <div className="who">
           <div className="av">{name.slice(0, 2).toUpperCase()}</div>
-          <div><b>{name}</b><br />{isAdmin ? 'Admin' : 'Tutor'} · <button className="link" onClick={() => sb.auth.signOut()}>Sign out</button></div>
+          <div><b>{name}</b><br />{isAdmin ? 'Admin' : 'Tutor'} · <NavLink to="/account" className="link">Account</NavLink> · <button className="link" onClick={() => sb.auth.signOut()}>Sign out</button></div>
         </div>
       </aside>
       <main>
@@ -58,6 +63,7 @@ export default function App() {
           <Route path="/classes" element={<Classes />} />
           <Route path="/students" element={<Students />} />
           <Route path="/report" element={<Report />} />
+          <Route path="/account" element={<Account email={session.user.email} />} />
           {isAdmin && <Route path="/admin" element={<Admin />} />}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

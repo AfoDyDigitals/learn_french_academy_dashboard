@@ -124,3 +124,10 @@ td select,td input{border:1px solid var(--line);border-radius:8px;padding:6px 8p
 .pushbox small{color:rgba(255,255,255,.8)}
 .pushbox + .who{margin-top:12px}
 @media (max-width:860px){.pushbox{margin-top:0;white-space:nowrap;flex:none}.pushbox small{white-space:normal;max-width:220px}}
+
+.pw{position:relative;display:flex}
+.pw input{flex:1;padding-right:64px}
+.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--blue);font:600 13px var(--body);padding:6px 8px;cursor:pointer;border-radius:6px}
+.pw-toggle:hover{background:var(--blue-soft)}
+.link.alt{color:var(--blue);align-self:center;margin-top:8px;font-weight:600}
+.who a.link{color:#fff}
