@@ -366,17 +366,55 @@ export function AdminTutors({ me }) {
         </div>
       </Sheet>
       <Sheet open={help} title="Add a tutor" onClose={() => setHelp(false)}>
-        <ol className="steps">
-          <li>In Supabase, open <b>Authentication → Users</b>.</li>
-          <li>Click <b>Add user → Create new user</b>, enter their email and a temporary password, and tick <b>Auto confirm</b>.</li>
-          <li>They appear in this list as a tutor. Type their name in the list so they show up in student and class forms.</li>
-          <li>Share the dashboard address and their temporary password. They can change it under <b>Account</b>.</li>
-        </ol>
-        {tutors.length > 0 && <div className="form"><div className="field"><label htmlFor="promote">Make an existing tutor an admin</label>
+        <NewTutor onDone={reload} />
+        {tutors.length > 0 && <div className="form promote"><div className="field wide"><label htmlFor="promote">Or make an existing tutor an admin</label>
           <select id="promote" value="" onChange={e => { if (e.target.value) { update(e.target.value, { role: 'admin' }, 'Now an admin'); setHelp(false) } }}>
             <option value="">Choose a tutor…</option>{tutors.map(t => <option key={t.id} value={t.id}>{t.full_name || 'Unnamed tutor'}</option>)}</select></div></div>}
       </Sheet>
     </section>
+  )
+}
+
+// Admin creates the account directly; the create-tutor edge function does the privileged part
+const tempPassword = () => { const c = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint32Array(10)), n => c[n % c.length]).join('') }
+function NewTutor({ onDone }) {
+  const blank = () => ({ full_name: '', email: '', password: tempPassword() })
+  const [v, setV] = useState(blank)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [made, setMade] = useState(null)
+  const set = k => e => setV({ ...v, [k]: e.target.value })
+  async function go(e) {
+    e.preventDefault(); setBusy(true); setMsg('')
+    const { data, error } = await sb.functions.invoke('create-tutor', { body: v })
+    setBusy(false)
+    const err = data?.error || (error && (await error.context?.json?.().catch(() => null))?.error) || error?.message
+    if (err) return setMsg(err)
+    setMade(v); toast(`${v.full_name} added`); onDone()
+  }
+  const details = made && `Dashboard: ${location.origin}\nEmail: ${made.email}\nTemporary password: ${made.password}`
+  if (made) return (
+    <div className="created">
+      <p className="sheet-intro"><b>{made.full_name}</b> can sign in now. Send them these details; they can change the password under Account.</p>
+      <pre className="creds">{details}</pre>
+      <div className="form-actions">
+        <button className="btn" onClick={() => navigator.clipboard.writeText(details).then(() => toast('Copied'))}>Copy details</button>
+        <button className="btn ghost" onClick={() => { setMade(null); setV(blank()) }}>Add another</button>
+      </div>
+    </div>
+  )
+  return (
+    <form className="form" onSubmit={go}>
+      <p className="sheet-intro">Creates their account straight away. No email is sent; share the details yourself.</p>
+      <div className="field wide"><label htmlFor="nt-name">Full name</label><input id="nt-name" required value={v.full_name} onChange={set('full_name')} /></div>
+      <div className="field wide"><label htmlFor="nt-email">Email</label><input id="nt-email" type="email" required autoComplete="off" value={v.email} onChange={set('email')} /></div>
+      <div className="field wide"><label htmlFor="nt-pw">Temporary password</label>
+        <div className="pw"><input id="nt-pw" required minLength={8} autoComplete="new-password" value={v.password} onChange={set('password')} />
+          <button type="button" className="pw-toggle" onClick={() => setV({ ...v, password: tempPassword() })}>New</button></div>
+        <small className="hint">At least 8 characters. Tap New for a random one.</small></div>
+      {msg && <p className="note bad">Not added: {msg}</p>}
+      <div className="form-actions"><button className="btn" disabled={busy}>{busy ? 'Adding…' : 'Add tutor'}</button></div>
+    </form>
   )
 }
 
