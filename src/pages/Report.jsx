@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sb } from '../supabase'
 import { useRows, fmtDay, State } from '../ui'
+import { PageHeader, toast } from '../components'
 
 export default function Report() {
   const since = new Date(); since.setDate(since.getDate() - 14)
@@ -23,17 +24,17 @@ export default function Report() {
     const { error } = await sb.from('reports').insert({ class_id: classId, tutor_id: user.id, ...form, duration_min: Number(form.duration_min) || null })
     if (error) return setMsg(`Not saved: ${error.message}`)
     await Promise.all(Object.entries(att).map(([sid, a]) => sb.from('class_students').update({ attended: a }).eq('class_id', classId).eq('student_id', sid)))
-    setForm({ covered: '', homework: '', notes: '', duration_min: cls?.duration_min ?? '' }); setMsg('Report submitted.')
+    setForm({ covered: '', homework: '', notes: '', duration_min: cls?.duration_min ?? '' }); toast('Report submitted')
   }
 
   const set = k => e => setForm({ ...form, [k]: e.target.value })
 
   return (
     <section>
-      <div className="top"><div><h1>Class report</h1><p className="sub">Takes about 2 minutes. Admins see it right away.</p></div></div>
+      <PageHeader title="Class report" sub="Takes about 2 minutes. Admins see it right away." />
       <State rows={classes} err={err} empty="No classes in the last 14 days to report on." />
       {classes?.length > 0 && (
-        <form className="panel" style={{ maxWidth: 640 }} onSubmit={submit}>
+        <form className="panel form narrow" onSubmit={submit}>
           <div className="field"><label htmlFor="rc">Class</label>
             <select id="rc" value={classId} onChange={e => setClassId(e.target.value)}>
               {classes.map(c => <option key={c.id} value={c.id}>{c.level} · {fmtDay(c.starts_at)} · {c.title}</option>)}
@@ -49,8 +50,8 @@ export default function Report() {
           <div className="field"><label htmlFor="rt">What did you cover?</label><textarea id="rt" rows="3" required value={form.covered} onChange={set('covered')} /></div>
           <div className="field"><label htmlFor="rh">Homework set</label><input id="rh" value={form.homework} onChange={set('homework')} /></div>
           <div className="field"><label htmlFor="rn">Anything admins should know?</label><input id="rn" placeholder="Optional" value={form.notes} onChange={set('notes')} /></div>
-          {msg && <p className="note">{msg}</p>}
-          <button className="btn">Submit report</button>
+          {msg && <p className="note bad">{msg}</p>}
+          <div className="form-actions"><button className="btn">Submit report</button></div>
         </form>
       )}
     </section>

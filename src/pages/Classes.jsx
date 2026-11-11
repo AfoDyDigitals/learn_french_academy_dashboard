@@ -1,5 +1,6 @@
 import { sb } from '../supabase'
 import { useRows, Lvl, fmtTime, fmtDay, State } from '../ui'
+import { PageHeader } from '../components'
 
 export default function Classes() {
   const from = new Date(); from.setHours(0, 0, 0, 0)
@@ -10,16 +11,17 @@ export default function Classes() {
 
   return (
     <section>
-      <div className="top"><div><h1>Next 7 days</h1><p className="sub">All times WAT (Lagos)</p></div></div>
+      <PageHeader title="Classes" sub="Your next 7 days. Times are Lagos time." />
       <State rows={rows} err={err} empty="No classes scheduled this week." />
       <div className="week">
         {days.map(([d, cs]) => (
-          <div className="panel day" key={d}>
+          <div className="panel weekday" key={d}>
             <h3>{d}</h3>
             {cs.map(c => (
               <div className="slot" key={c.id}>
-                <Lvl l={c.level} /> <b>{fmtTime(c.starts_at)}</b>{c.title}
-                {c.meet_url && <div><a href={c.meet_url} target="_blank" rel="noreferrer">Join Meet</a></div>}
+                <span className="time">{fmtTime(c.starts_at)}</span><Lvl l={c.level} />
+                <div className="grow"><b>{c.title}</b><div className="meta">{c.duration_min} min</div></div>
+                {c.meet_url && <a className="pill info" href={c.meet_url} target="_blank" rel="noreferrer">Join Meet</a>}
               </div>
             ))}
           </div>
