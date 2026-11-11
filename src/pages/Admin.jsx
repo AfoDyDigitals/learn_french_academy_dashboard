@@ -114,23 +114,37 @@ function ClassesTab({ tutors, students }) {
   async function remove(id) { await sb.from('classes').delete().eq('id', id); reload() }
   const [scheds, , reloadScheds] = useRows(() => sb.from('schedules').select('*, profiles(full_name)').order('start_date', { ascending: false }))
   const activeStudents = students.filter(s => s.status === 'active').map(s => [s.id, `${s.full_name} (${s.level})`])
+  const [editing, setEditing] = useState(null) // schedule being edited, or null for a new one
+  const [made, setMade] = useState('')
   async function saveSchedule(v) {
     if (!v.weekdays?.length) return { message: 'Pick at least one class day.' }
-    const { data, error } = await sb.rpc('create_schedule', { p: { ...v, student_ids: v.student_ids || [] } })
+    const p = { ...v, student_ids: v.student_ids || [] }
+    const { data, error } = editing
+      ? await sb.rpc('update_schedule', { p_id: editing.id, p })
+      : await sb.rpc('create_schedule', { p })
     if (error) return error
-    reload(); reloadScheds(); alertCount(data)
+    setMade(editing ? `Schedule updated. ${data} upcoming classes rebuilt.` : `${data} classes created for the whole contract.`)
+    setEditing(null); reload(); reloadScheds()
   }
-  const [made, alertCount] = useState(null)
+  function startEdit(s) {
+    setMade('')
+    setEditing({ ...s, start_time: s.start_time.slice(0, 5), meet_url: s.meet_url || '', tutor_id: s.tutor_id || '' })
+    document.getElementById('sched-form')?.scrollIntoView({ behavior: 'smooth' })
+  }
   async function endSchedule(id) { await sb.rpc('end_schedule', { p_id: id }); reload(); reloadScheds() }
   return (
     <div className="grid">
-      <QuickForm title="Recurring schedule (set once per contract)" initial={{ duration_min: 90, weeks: 8, weekdays: [] }}
+      <div id="sched-form" className="grid">
+      {editing && <p className="note">Editing <b>{editing.title}</b>. Changes apply to classes from now on; past classes and reports stay as they are. <button className="link alt" onClick={() => setEditing(null)}>Cancel edit</button></p>}
+      <QuickForm key={editing?.id || 'new'} title={editing ? 'Edit recurring schedule' : 'Recurring schedule (set once per contract)'}
+        initial={editing || { duration_min: 90, weeks: 8, weekdays: [] }}
         fields={[['title', 'Course name, e.g. A1 Evening'], ['level', 'Level', 'select', LEVELS], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)],
           ['weekdays', 'Class days', 'days'], ['start_time', 'Start time (Lagos)', 'time'], ['duration_min', 'Duration (minutes)', 'number'],
           ['start_date', 'Contract start date', 'date'], ['weeks', 'Contract length (weeks)', 'number'], ['meet_url', 'Google Meet link (same every class)', 'url'],
           ['student_ids', 'Students', 'multi', activeStudents]]}
         onSave={saveSchedule} />
-      {made !== null && <p className="note">{made} classes created for the whole contract.</p>}
+      </div>
+      {made && <p className="note">{made}</p>}
       <div className="panel scroll">
         <h2>Active schedules</h2>
         <State rows={scheds} empty="No recurring schedules yet." />
@@ -142,7 +156,7 @@ function ClassesTab({ tutors, students }) {
               <tr key={s.id}><td><Lvl l={s.level} /> {s.title}</td><td>{s.profiles?.full_name || '–'}</td>
                 <td>{s.weekdays.map(d => DAYS[d - 1]).join(', ')}</td><td>{s.start_time.slice(0, 5)}</td>
                 <td>{s.start_date} → {end.toISOString().slice(0, 10)}</td><td>{s.student_ids.length}</td>
-                <td><button className="link danger" onClick={() => endSchedule(s.id)}>End early</button></td></tr>)
+                <td className="actions"><button className="link alt" onClick={() => startEdit(s)}>Edit</button> <button className="link danger" onClick={() => endSchedule(s.id)}>End early</button></td></tr>)
           })}</tbody>
         </table>}
       </div>
