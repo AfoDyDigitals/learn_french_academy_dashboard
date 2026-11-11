@@ -142,3 +142,4 @@ td select,td input{border:1px solid var(--line);border-radius:8px;padding:6px 8p
   .drawer[data-open="true"]{display:flex}
 }
 .pushbox{align-items:flex-start}
+.actions{white-space:nowrap}.actions .link{margin:0 6px 0 0}
