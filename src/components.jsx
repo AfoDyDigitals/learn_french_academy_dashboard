@@ -140,6 +140,17 @@ export function ConfirmButton({ children, ask = 'Tap again to confirm', onConfir
   return <button className={`${className} ${asking ? 'asking' : ''}`} onClick={() => asking ? (setAsking(false), onConfirm()) : setAsking(true)}>{asking ? ask : children}</button>
 }
 
+// Pinned TEF/TCF practice links at the top of the library
+export function ExamPractice({ links }) {
+  return (
+    <div className="exam">
+      <div className="exam-head"><span className="lvl TCF">TEF/TCF</span><b>Exam practice</b></div>
+      <div className="exam-links">{links.map(([t, d, u]) => (
+        <a key={u} className="exam-link" href={u} target="_blank" rel="noreferrer"><b>{t} ↗</b><span>{d}</span></a>))}</div>
+    </div>
+  )
+}
+
 export function Empty({ title, children }) {
   return <div className="empty-state"><b>{title}</b>{children && <p>{children}</p>}</div>
 }

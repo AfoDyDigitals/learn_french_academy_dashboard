@@ -9,7 +9,17 @@ export function useRows(query, deps = []) {
   return [rows, err, load]
 }
 
-export const Lvl = ({ l }) => <span className={`lvl ${l}`}>{l}</span>
+// Stored level 'TCF' covers both TEF and TCF exam prep
+export const lvlLabel = l => (l === 'TCF' ? 'TEF/TCF' : l)
+export const Lvl = ({ l }) => <span className={`lvl ${l}`}>{lvlLabel(l)}</span>
+export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', ['TCF', 'TEF/TCF']]
+// Bonjour until 6 pm, Bonsoir after, by the viewer's clock
+export const greeting = name => `${new Date().getHours() < 18 ? 'Bonjour' : 'Bonsoir'}, ${name.split(' ')[0]}`
+// Free exam practice, shown at the top of the library
+export const EXAM_PRACTICE = [
+  ['TCF practice tests', 'TV5Monde · free exercises by section', 'https://apprendre.tv5monde.com/fr/tcf'],
+  ['TEF preparation', 'CCI Paris (official) · sample papers and tips', 'https://lefrancaisdesaffaires.fr/en/tests-diplomas/prepare-for-the-tef'],
+]
 
 export const fmtTime = d => new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
 export const fmtDay = d => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' })

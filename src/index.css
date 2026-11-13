@@ -237,6 +237,14 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
 .slot:first-of-type{border-top:0}
 .slot .grow{flex:1;min-width:0}
 
+.exam{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.exam-head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.exam-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.exam-link{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);text-decoration:none;color:inherit}
+.exam-link b{color:var(--blue)}
+.exam-link span{font-size:13px;color:var(--muted)}
+.exam-link:hover{border-color:var(--blue)}
+
 /* ---------- Login ---------- */
 .login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
 .login .panel{width:100%;max-width:400px;margin:0;padding:28px}
