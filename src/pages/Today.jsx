@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { sb } from '../supabase'
-import { useRows, Lvl, fmtTime, State } from '../ui'
+import { useRows, Lvl, fmtTime, State, greeting, lvlLabel } from '../ui'
 import { PageHeader } from '../components'
 
 export default function Today({ name }) {
@@ -13,11 +13,11 @@ export default function Today({ name }) {
   const [students] = useRows(() => sb.from('students').select('level').eq('status', 'active'))
 
   const hours = (week || []).reduce((s, c) => s + c.duration_min, 0) / 60
-  const byLevel = Object.entries((students || []).reduce((m, s) => ({ ...m, [s.level]: (m[s.level] || 0) + 1 }), {})).map(([l, n]) => `${l} ×${n}`).join(' · ')
+  const byLevel = Object.entries((students || []).reduce((m, s) => ({ ...m, [s.level]: (m[s.level] || 0) + 1 }), {})).map(([l, n]) => `${lvlLabel(l)} ×${n}`).join(' · ')
 
   return (
     <section>
-      <PageHeader title={`Bonjour, ${name.split(' ')[0]}`} sub={`${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · ${today?.length ?? 0} live classes today`}>
+      <PageHeader title={greeting(name)} sub={`${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · ${today?.length ?? 0} live classes today`}>
         <Link className="btn" to="/report">File a report</Link>
       </PageHeader>
       <div className="stats three">

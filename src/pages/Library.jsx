@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { sb } from '../supabase'
-import { useRows, Lvl, State } from '../ui'
-import { PageHeader, Toolbar } from '../components'
+import { useRows, Lvl, State, LEVELS, EXAM_PRACTICE } from '../ui'
+import { PageHeader, Toolbar, ExamPractice } from '../components'
 
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'TCF']
 const SKILLS = ['Listening', 'Speaking', 'Reading', 'Writing', 'Grammar']
 
 export default function Library() {
@@ -16,6 +15,7 @@ export default function Library() {
   return (
     <section>
       <PageHeader title="Library" sub="Free listening and speaking material, sorted by level and skill." />
+      <ExamPractice links={EXAM_PRACTICE} />
       <Toolbar search={q} onSearch={setQ} placeholder="Search topics, e.g. au restaurant" values={f} onChange={setF}
         filters={[['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS]]} />
       <State rows={shown} err={err} empty="Nothing matches. Try another search or clear the filters." />

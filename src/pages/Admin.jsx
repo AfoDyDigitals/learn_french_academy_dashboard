@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { sb } from '../supabase'
-import { useRows, Lvl, fmtDay, fmtTime, State } from '../ui'
-import { PageHeader, AddButton, Tabs, Sheet, Toolbar, Table, ConfirmButton, toast } from '../components'
+import { useRows, Lvl, fmtDay, fmtTime, State, LEVELS, greeting, EXAM_PRACTICE } from '../ui'
+import { PageHeader, AddButton, Tabs, Sheet, Toolbar, Table, ConfirmButton, toast, ExamPractice } from '../components'
 
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'TCF']
 const SKILLS = ['Listening', 'Speaking', 'Reading', 'Writing', 'Grammar']
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // Class times are entered and shown in Lagos time (UTC+1, no daylight saving)
@@ -98,7 +97,7 @@ export function AdminOverview({ name }) {
 
   return (
     <section>
-      <PageHeader title={`Bonjour, ${name.split(' ')[0]}`} sub={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} />
+      <PageHeader title={greeting(name)} sub={new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} />
       <div className="stats">
         <Stat to="/classes" k="Classes today" v={today?.length} n={`${week?.length ?? 0} in the next 7 days · ${hours} h`} />
         <Stat to="/students" k="Active students" v={students?.length} />
@@ -271,12 +270,12 @@ export function AdminStudents() {
       </PageHeader>
       <Toolbar search={q} onSearch={setQ} placeholder="Search name, email, phone or country" values={f} onChange={setF} defaults={defaults}
         filters={[['status', 'Status', 'select', [['active', 'Active'], ['paused', 'Paused'], ['finished', 'Finished'], ['', 'Any status']]],
-          ['tutor', 'Tutor', 'select', tutorOpts(tutors, true)], ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TCF prep']]]]} />
+          ['tutor', 'Tutor', 'select', tutorOpts(tutors, true)], ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TEF/TCF prep']]]]} />
       <div className="panel flush">
         <State rows={students && shown} err={err} empty="No students match. Clear the filters or add a student." />
         {shown.length > 0 && <Table head={['Student', 'Level', 'Contact', 'Tutor', 'Attendance', 'Status', '']} rows={shown.map(s => ({
           key: s.id, cells: [
-            <span className="cell-title"><b>{s.full_name}</b><small className="meta">{[s.country, s.goal === 'tcf' && `TCF ${s.exam_date ? fmtDay(s.exam_date) : ''}`].filter(Boolean).join(' · ')}</small></span>,
+            <span className="cell-title"><b>{s.full_name}</b><small className="meta">{[s.goal === 'tcf' ? `TEF/TCF prep${s.exam_date ? ` · exam ${fmtDay(s.exam_date)}` : ''}` : 'General French', s.country].filter(Boolean).join(' · ')}</small></span>,
             <Lvl l={s.level} />,
             <span className="meta">{s.email}{s.email && s.phone && <br />}{s.phone}</span>,
             <select aria-label="Tutor" className="inline-select" value={s.tutor_id || ''} onChange={e => update(s.id, { tutor_id: e.target.value || null }, 'Tutor changed')}>
@@ -291,8 +290,8 @@ export function AdminStudents() {
         <Form key={sheet?.id || 'new'} onDone={() => setSheet(null)} submit={sheet === 'new' ? 'Add student' : 'Save changes'}
           initial={sheet && sheet !== 'new' ? Object.fromEntries(STUDENT_COLS.map(k => [k, sheet[k] ?? ''])) : { goal: 'general' }}
           fields={[['full_name', 'Full name'], ['email', 'Email', 'email'], ['phone', 'Phone', 'tel'], ['country', 'Country'],
-            ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TCF prep']]],
-            ['exam_date', 'TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)]]}
+            ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TEF/TCF prep']]],
+            ['exam_date', 'TEF/TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)]]}
           onSave={save} />
       </Sheet>
     </section>
@@ -526,6 +525,7 @@ export function AdminLibrary() {
       <PageHeader title="Library" sub="Free resources tutors use in class. Tutors see this list, sorted by level and skill.">
         <AddButton onClick={() => setSheet('new')}>Add resource</AddButton>
       </PageHeader>
+      <ExamPractice links={EXAM_PRACTICE} />
       <Toolbar search={q} onSearch={setQ} placeholder="Search title or source" values={f} onChange={setF}
         filters={[['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS]]} />
       <div className="panel flush">
