@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Exam Strategy Guide · Learn French Academy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+@page{size:A4;margin:0}
+:root{--blue:#2563FF;--navy:#1d1a5e;--navy2:#2e4599;--red:#ED1C24;--ink:#1d1a5e;--muted:#5d6185;--line:#e2e6f0;--soft:#f3f6fc}
+*{box-sizing:border-box}
+body{margin:0;font-family:Montserrat,sans-serif;color:var(--ink);font-size:10pt;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;page-break-after:always;padding:22mm 18mm 20mm}
+.page:last-child{page-break-after:auto}
+.band{position:absolute;left:0;top:0;right:0;height:9mm;background:linear-gradient(90deg,var(--navy2),var(--navy))}
+.band::after{content:"";position:absolute;left:0;bottom:-1.2mm;width:38mm;height:1.2mm;background:var(--red)}
+.foot{position:absolute;left:18mm;right:18mm;bottom:9mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--muted);border-top:1px solid var(--line);padding-top:3mm}
+.foot b{color:var(--navy)}
+h1{font-size:22pt;font-weight:800;margin:4mm 0 2mm;letter-spacing:-.02em;line-height:1.15}
+h2{font-size:13pt;font-weight:700;margin:5mm 0 2mm;color:var(--navy)}
+h3{font-size:10.5pt;font-weight:700;margin:4mm 0 1.5mm}
+p{margin:0 0 2.5mm}
+.kicker{font-size:8pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+.lead{font-size:10.5pt;color:var(--muted);max-width:155mm}
+table{width:100%;border-collapse:collapse;margin:2mm 0 3mm;font-size:8.8pt}
+th{background:var(--navy);color:#fff;text-align:left;font-weight:600;padding:2mm 2.5mm}
+td{padding:1.4mm 2.5mm;border-bottom:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:var(--soft)}
+ul{margin:0 0 2.5mm;padding-left:5mm}
+li{margin-bottom:1.2mm}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.card{border:1px solid var(--line);border-radius:3mm;padding:3.5mm 4mm;background:#fff;break-inside:avoid}
+.card h3{margin-top:0;display:flex;align-items:center;gap:2mm}
+.tag{display:inline-block;font-size:7.5pt;font-weight:700;color:#fff;background:var(--blue);border-radius:10mm;padding:.6mm 2.5mm}
+.tag.red{background:var(--red)}.tag.navy{background:var(--navy)}
+.tip{border-left:1.2mm solid var(--blue);background:var(--soft);padding:3mm 4mm;margin:3mm 0;border-radius:0 2mm 2mm 0}
+.tip b{color:var(--blue)}
+.warn{border-left-color:var(--red)}.warn b{color:var(--red)}
+.small{font-size:8pt;color:var(--muted)}
+/* cover */
+.cover{padding:0;background:linear-gradient(160deg,var(--blue) 0%,var(--navy2) 55%,var(--navy) 100%);color:#fff}
+.cover .inner{position:absolute;left:20mm;right:20mm;top:28mm;bottom:24mm;display:flex;flex-direction:column}
+.cover .logo{width:30mm;height:30mm;background:#fff;border-radius:6mm;display:grid;place-items:center}
+.cover .logo img{width:22mm}
+.cover h1{font-size:34pt;margin-top:34mm;line-height:1.05;color:#fff}
+.cover .sub{font-size:13pt;margin-top:5mm;opacity:.92;max-width:140mm}
+.cover .exams{display:flex;gap:3mm;margin-top:10mm}
+.cover .exams span{border:1px solid rgba(255,255,255,.55);border-radius:10mm;padding:2mm 5mm;font-weight:700;font-size:11pt}
+.cover .bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:9pt;opacity:.9}
+.cover .stripe{position:absolute;left:0;bottom:0;width:100%;height:5mm;background:var(--red)}
+.check li{list-style:none;position:relative;padding-left:5mm}
+.check li::before{content:"";position:absolute;left:0;top:1.6mm;width:2.6mm;height:2.6mm;border:1.5px solid var(--blue);border-radius:.6mm}
+.phr td:first-child{font-weight:600;width:42%}
+/* screen view: pages on a gray desk, toolbar on top */
+@media screen{
+  html{background:#e7ebf3}
+  body{padding:72px 0 32px}
+  .page{margin:0 auto 24px;box-shadow:0 6px 30px rgba(13,22,54,.18);background:#fff}
+  .cover{background:linear-gradient(160deg,var(--blue) 0%,var(--navy2) 55%,var(--navy) 100%)}
+  .bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--navy);color:#fff}
+  .bar a,.bar button{font:600 14px Montserrat,sans-serif;color:#fff;text-decoration:none;border:0;background:none;cursor:pointer}
+  .bar button{background:var(--red);border-radius:8px;padding:9px 16px}
+  @media (max-width:820px){.page{transform-origin:top left;zoom:calc(100vw / 210mm)}}
+}
+@media print{.bar{display:none}}
+</style>
+</head>
+<body>
+<div class="bar"><a href="/">← Back to dashboard</a><button onclick="window.print()">Download PDF</button></div>
+
+<!-- 1. Cover -->
+<section class="page cover">
+  <div class="inner">
+    <div class="logo"><img src="/logo.png" alt="Learn French Academy"></div>
+    <h1>Exam Strategy<br>Guide</h1>
+    <p class="sub">How the four main French exams work, and how to score higher in each one.</p>
+    <div class="exams"><span>TCF</span><span>TEF</span><span>DELF</span><span>DALF</span></div>
+    <div class="bottom">
+      <div><b style="font-size:12pt">Learn French Academy</b><br>learnfrenchacademy.com</div>
+      <div style="text-align:right">For LFA students and tutors<br>Edition: November 2026</div>
+    </div>
+  </div>
+  <div class="stripe"></div>
+</section>
+
+<!-- 2. Which exam -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">Start here</span>
+  <h1>Which exam is right for you?</h1>
+  <p class="lead">All four use the CEFR scale (A1 to C2). They differ in purpose, validity and scoring.</p>
+  <table>
+    <tr><th style="width:15%">Exam</th><th style="width:30%">Best for</th><th>Result</th><th style="width:20%">Validity</th></tr>
+    <tr><td><b>TCF</b><br><span class="small">France Éducation international</span></td><td>Immigration (TCF Canada, TCF Québec), French residency and citizenship (TCF IRN), university entry</td><td>A score, not pass/fail, placed on A1–C2 (and NCLC for Canada)</td><td>2 years</td></tr>
+    <tr><td><b>TEF</b><br><span class="small">CCI Paris Île-de-France</span></td><td>Same uses as the TCF: TEF Canada, TEFaQ, TEF IRN for France</td><td>A score from 0 to 699 per test (TEF Canada), mapped to CEFR and NCLC</td><td>2 years</td></tr>
+    <tr><td><b>DELF</b><br><span class="small">A1, A2, B1, B2</span></td><td>A permanent diploma for school, work and many university programs (B2 is often required)</td><td>Pass/fail diploma for one level</td><td>For life</td></tr>
+    <tr><td><b>DALF</b><br><span class="small">C1, C2</span></td><td>Advanced study, academic and professional use; exempts you from many university language tests</td><td>Pass/fail diploma for one level</td><td>For life</td></tr>
+  </table>
+  <div class="tip"><b>Rule of thumb.</b> Applying to Canada or for French residency? Take the TCF or TEF; check which one your program accepts. Want a diploma you keep forever? Take the DELF or DALF at the level you're confident you can pass.</div>
+
+  <h2>How LFA levels line up</h2>
+  <table>
+    <tr><th>LFA level</th><th>You can…</th><th>Exam to aim for</th></tr>
+    <tr><td><b>A1</b> (12 weeks)</td><td>Introduce yourself, handle numbers, time and simple daily needs</td><td>DELF A1</td></tr>
+    <tr><td><b>A2</b> (12 weeks)</td><td>Talk about your past, routine, health, work and travel in simple terms</td><td>DELF A2</td></tr>
+    <tr><td><b>B1</b></td><td>Deal with most travel situations, give opinions and explain plans</td><td>DELF B1 · TCF/TEF NCLC 5–6</td></tr>
+    <tr><td><b>B2</b></td><td>Argue a point of view, follow detailed talks and articles</td><td>DELF B2 · TCF/TEF NCLC 7+</td></tr>
+    <tr><td><b>C1</b></td><td>Use French fluently for study and work, write structured syntheses</td><td>DALF C1</td></tr>
+  </table>
+  <div class="tip warn"><b>Always check the official rules.</b> Formats, fees and requirements change. Before booking, read your test center's page and the official exam website. Figures in this guide were checked in November 2026.</div>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>2</span></div>
+</section>
+
+<!-- 3. Skills -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">Works for every exam</span>
+  <h1>Strategies by skill</h1>
+  <div class="grid">
+    <div class="card"><h3><span class="tag">Listening</span></h3>
+      <ul>
+        <li><b>Read the questions first.</b> Use every second before the audio starts to underline who, what, when and why.</li>
+        <li><b>Predict.</b> Guess the likely vocabulary before you hear it (a train station: <i>quai, retard, billet</i>).</li>
+        <li><b>Listen for signal words:</b> <i>mais, pourtant, en revanche</i> often come right before the correct answer.</li>
+        <li><b>Beware of word traps.</b> The option that repeats a word you heard is often wrong; the right one usually paraphrases.</li>
+        <li><b>If you hear it once only</b> (TCF, TEF), answer immediately and move on.</li>
+      </ul></div>
+    <div class="card"><h3><span class="tag">Reading</span></h3>
+      <ul>
+        <li><b>Skim, then scan.</b> 30 seconds for the general idea, then hunt for the line that answers each question.</li>
+        <li><b>Questions usually follow the order of the text.</b></li>
+        <li><b>Watch the details:</b> negatives (<i>ne… plus, ne… jamais</i>), numbers, dates and conditions change the meaning.</li>
+        <li><b>Justify with the text.</b> In the DELF, copy the exact phrase that proves your answer.</li>
+        <li><b>Never leave a multiple-choice blank.</b> The TCF and TEF don't take points off for wrong answers.</li>
+      </ul></div>
+    <div class="card"><h3><span class="tag red">Writing</span></h3>
+      <ul>
+        <li><b>Plan for 3–5 minutes:</b> purpose, reader, register (<i>tu</i> or <i>vous</i>), three ideas.</li>
+        <li><b>Answer every part of the task.</b> Missing a requested point costs more than a grammar slip.</li>
+        <li><b>Respect the word count.</b> Too short loses points; count your lines as you go.</li>
+        <li><b>Use linking words</b> (<i>d'abord, ensuite, cependant, donc, enfin</i>) and paragraphs.</li>
+        <li><b>Keep 5 minutes to reread:</b> agreements, verb endings, accents.</li>
+      </ul></div>
+    <div class="card"><h3><span class="tag red">Speaking</span></h3>
+      <ul>
+        <li><b>Use your preparation time</b> to write key words only, never full sentences to read out.</li>
+        <li><b>Structure out loud:</b> introduce, give 2–3 points with examples, conclude.</li>
+        <li><b>Keep talking.</b> If you lose a word, describe it: <i>c'est une chose qui sert à…</i></li>
+        <li><b>Ask the examiner to repeat</b> if needed: <i>Pourriez-vous répéter, s'il vous plaît ?</i></li>
+        <li><b>Show range:</b> one past tense, one future, one conditional and a few connectors.</li>
+      </ul></div>
+  </div>
+  <div class="tip"><b>Time management.</b> Before the exam, write down the minutes you can spend on each part. During the exam, glance at the clock at every section change, not only at the end.</div>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>3</span></div>
+</section>
+
+<!-- 4. TCF -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">France Éducation international</span>
+  <h1>TCF Canada</h1>
+  <p class="lead">The most common version for our students. TCF tout public, TCF Québec and TCF IRN follow the same idea with some differences in length and tasks.</p>
+  <table>
+    <tr><th>Test</th><th>Format</th><th>Time</th><th>Score</th></tr>
+    <tr><td><b>Listening</b></td><td>39 multiple-choice questions, 4 options, getting harder as you go</td><td>35&nbsp;min</td><td>/699</td></tr>
+    <tr><td><b>Reading</b></td><td>39 multiple-choice questions, 4 options</td><td>60&nbsp;min</td><td>/699</td></tr>
+    <tr><td><b>Writing</b></td><td>3 tasks: short message (60–120 words), article or letter (120–150), argued text from two documents (120–180)</td><td>60&nbsp;min</td><td>/20</td></tr>
+    <tr><td><b>Speaking</b></td><td>Face to face: guided interview (~2 min), role play with 2 min to prepare (~5.5 min), giving your opinion (~4.5 min)</td><td>12&nbsp;min</td><td>/20</td></tr>
+  </table>
+  <h2>Target for Canada: NCLC 7</h2>
+  <p>Express Entry's French-speaker category asks for NCLC 7 in all four skills. Minimums: <b>458</b> listening, <b>453</b> reading and <b>10/20</b> in writing and speaking. Aim for a safety margin of about <b>480 / 475 / 12</b>.</p>
+  <div class="grid">
+    <div class="card"><h3>Listening and reading</h3><ul>
+      <li>Questions go from A1 to C2. Win the easy points early, but don't rush them.</li>
+      <li>Each listening extract is played once. Answer, then let it go.</li>
+      <li>Wrong answers aren't penalized: always pick an option.</li>
+      <li>In reading, pace yourself at about 90 seconds per question.</li></ul></div>
+    <div class="card"><h3>Writing and speaking</h3><ul>
+      <li>Task 3 (writing): summarize both documents' views neutrally, then give your opinion with reasons.</li>
+      <li>Speaking task 2: ask at least 6 varied questions (price, time, place, conditions).</li>
+      <li>Speaking task 3: state your opinion in the first sentence, then give 2 arguments and an example each.</li>
+      <li>Use <i>vous</i> with the examiner unless told otherwise.</li></ul></div>
+  </div>
+  <div class="tip"><b>Free practice.</b> TV5Monde's TCF section (apprendre.tv5monde.com/fr/tcf) has exercises for all four skills. It's linked in your dashboard under Practice.</div>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>4</span></div>
+</section>
+
+<!-- 5. TEF -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">CCI Paris Île-de-France</span>
+  <h1>TEF Canada</h1>
+  <p class="lead">Four tests taken on the same day, about 2 hours 55 minutes in total. Scores run from 0 to 699 per test and convert to CEFR and NCLC levels. The citizenship version keeps only listening and speaking.</p>
+  <table>
+    <tr><th>Test</th><th>Format</th><th>Time</th></tr>
+    <tr><td><b>Reading</b></td><td>40 questions</td><td>60&nbsp;min</td></tr>
+    <tr><td><b>Listening</b></td><td>40 questions</td><td>40&nbsp;min</td></tr>
+    <tr><td><b>Writing</b></td><td>Section A: continue a news article (80+ words, 25 min). Section B: give and defend your opinion (200+ words, 35 min)</td><td>60&nbsp;min</td></tr>
+    <tr><td><b>Speaking</b></td><td>Section A: call to get information (5 min). Section B: convince a friend (10 min)</td><td>15&nbsp;min</td></tr>
+  </table>
+  <div class="grid">
+    <div class="card"><h3>Writing</h3><ul>
+      <li><b>Section A:</b> keep the article's tone and facts; answer what, who, where, when; use past tenses correctly.</li>
+      <li><b>Section B:</b> state your position, give at least 3 arguments with examples, and answer one counter-argument.</li>
+      <li>Word minimums are strict. Plan 80 and 200 words, not "about".</li></ul></div>
+    <div class="card"><h3>Speaking</h3><ul>
+      <li><b>Section A:</b> aim for 10 or more different questions in 5 minutes. Vary the forms: <i>est-ce que</i>, inversion, <i>quel/quelle</i>.</li>
+      <li><b>Section B:</b> the examiner will disagree on purpose. Stay polite, rephrase, and add a new argument each time.</li>
+      <li>Keep a list of ready phrases: <i>Je comprends ton point de vue, mais…</i></li></ul></div>
+  </div>
+  <h2>Other TEF versions</h2>
+  <p><b>TEF IRN</b> (for French residency and naturalisation) is shorter: about 1 hour 30, scored 0 to 499, levels A1 to B2. Naturalisation applications from 1 January 2026 require <b>B2</b> in both oral and written French, with a certificate under two years old.</p>
+  <div class="tip"><b>Official help.</b> CCI Paris publishes free expert tips for each TEF test. Find them in your dashboard library under TEF/TCF.</div>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>5</span></div>
+</section>
+
+<!-- 6. DELF -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">Diploma for life</span>
+  <h1>DELF A1 to B2</h1>
+  <p class="lead">Each level is a separate diploma. Listening, reading and writing are taken together on paper; speaking is a one-on-one interview, often on another day.</p>
+  <table>
+    <tr><th>Level</th><th>Written tests (together)</th><th>Speaking</th><th>Speaking prep</th></tr>
+    <tr><td><b>A1</b></td><td>About 1 h 20</td><td>5–7&nbsp;min</td><td>About 10&nbsp;min</td></tr>
+    <tr><td><b>A2</b></td><td>About 1 h 40</td><td>6–8&nbsp;min</td><td>About 10&nbsp;min</td></tr>
+    <tr><td><b>B1</b></td><td>About 1 h 45</td><td>About 15&nbsp;min</td><td>About 10&nbsp;min</td></tr>
+    <tr><td><b>B2</b></td><td>About 2 h 30</td><td>About 20&nbsp;min</td><td>About 30&nbsp;min</td></tr>
+  </table>
+  <div class="tip warn"><b>How to pass.</b> Each of the 4 tests is marked out of 25, for a total of 100. You need <b>50/100</b> overall and at least <b>5/25 in every test</b>. A very weak skill can fail you even with a good total.</div>
+  <div class="grid">
+    <div class="card"><h3><span class="tag navy">A1–A2</span></h3><ul>
+      <li><b>Writing:</b> fill in forms, write short messages and postcards. Check you included every requested detail.</li>
+      <li><b>Speaking:</b> introduce yourself, answer questions about you, then a short role play (buying, booking, asking).</li>
+      <li>Learn numbers, dates, prices and times perfectly: they appear in every listening test.</li></ul></div>
+    <div class="card"><h3><span class="tag navy">B1–B2</span></h3><ul>
+      <li><b>Writing:</b> a letter, article or essay with a clear opinion. At B2, a structured argument with examples is expected.</li>
+      <li><b>Speaking B1:</b> interview, role play, then presenting your point of view on a short text.</li>
+      <li><b>Speaking B2:</b> defend an opinion from a short article, then debate with the examiner. Introduction, 2–3 arguments, conclusion.</li></ul></div>
+  </div>
+  <h3>Practice with the real thing</h3>
+  <p>France Éducation international publishes free official sample papers for every level. Do at least two full papers under timed conditions before your exam. Links are in your dashboard under Practice.</p>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>6</span></div>
+</section>
+
+<!-- 7. DALF -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">Advanced diploma</span>
+  <h1>DALF C1</h1>
+  <p class="lead">Same pass rules as the DELF (50/100 and at least 5/25 per test), with longer, more academic tasks. Written tests last about 4 hours in total.</p>
+  <table>
+    <tr><th>Test</th><th>Format</th><th>Time</th></tr>
+    <tr><td><b>Listening</b></td><td>One long recording (heard twice) and several short radio clips (heard once)</td><td>About 40&nbsp;min</td></tr>
+    <tr><td><b>Reading</b></td><td>One long text (about 1,500–2,000 words) with a questionnaire</td><td>50&nbsp;min</td></tr>
+    <tr><td><b>Writing</b></td><td>A synthesis of 2–3 documents (about 220 words), then an argumentative essay (about 250 words)</td><td>2&nbsp;h&nbsp;30</td></tr>
+    <tr><td><b>Speaking</b></td><td>A presentation built from 2–3 documents, then a discussion with the jury</td><td>30&nbsp;min +<br>1&nbsp;h&nbsp;prep</td></tr>
+  </table>
+  <div class="grid">
+    <div class="card"><h3>The synthesis</h3><ul>
+      <li>Find the common theme, then group the documents' ideas by point, not by document.</li>
+      <li>Stay neutral: no personal opinion, no examples of your own.</li>
+      <li>Reuse key words, never whole sentences. Give it a title.</li>
+      <li>Stay close to 220 words; count them.</li></ul></div>
+    <div class="card"><h3>Essay and presentation</h3><ul>
+      <li>Essay: clear thesis, two or three argued parts, a nuanced conclusion. Match the requested format (letter, article, opinion piece).</li>
+      <li>Presentation: open with a hook and the problem (<i>problématique</i>), announce your plan, keep to about 10 minutes.</li>
+      <li>In the discussion, defend your view calmly and accept good counter-points.</li></ul></div>
+  </div>
+  <div class="tip"><b>DALF C2.</b> The C2 is a single long written and oral exam on a chosen field. Only take it after a strong C1 result; ask your tutor for a dedicated plan.</div>
+  <div class="foot"><span><b>Learn French Academy</b> · Exam Strategy Guide</span><span>7</span></div>
+</section>
+
+<!-- 8. Toolkit -->
+<section class="page">
+  <div class="band"></div>
+  <span class="kicker">Your toolkit</span>
+  <h1>Useful phrases and exam checklist</h1>
+  <div class="grid">
+    <div>
+      <h2 style="margin-top:2mm">Phrases that earn points</h2>
+      <table class="phr">
+        <tr><th colspan="2">Structuring</th></tr>
+        <tr><td>Tout d'abord… Ensuite… Enfin…</td><td>First… Then… Finally…</td></tr>
+        <tr><td>D'une part… d'autre part…</td><td>On one hand… on the other…</td></tr>
+        <tr><td>En conclusion, …</td><td>In conclusion, …</td></tr>
+        <tr><th colspan="2">Giving an opinion</th></tr>
+        <tr><td>À mon avis, … / Selon moi, …</td><td>In my opinion, …</td></tr>
+        <tr><td>Je suis convaincu(e) que…</td><td>I'm convinced that…</td></tr>
+        <tr><td>Il me semble que…</td><td>It seems to me that…</td></tr>
+        <tr><th colspan="2">Contrasting and conceding</th></tr>
+        <tr><td>Cependant / Pourtant</td><td>However</td></tr>
+        <tr><td>Certes…, mais…</td><td>Admittedly…, but…</td></tr>
+        <tr><td>Bien que + subjonctif</td><td>Although</td></tr>
+        <tr><th colspan="2">Cause and consequence</th></tr>
+        <tr><td>Parce que / puisque / car</td><td>Because / since</td></tr>
+        <tr><td>Donc / c'est pourquoi</td><td>So / that's why</td></tr>
+        <tr><th colspan="2">Saving time in the oral</th></tr>
+        <tr><td>Pourriez-vous répéter ?</td><td>Could you repeat?</td></tr>
+        <tr><td>Si je comprends bien, …</td><td>If I understand correctly, …</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2 style="margin-top:2mm">Six weeks before</h2>
+      <ul class="check">
+        <li>Book your exam and check the accepted version (TCF Canada, TEF Canada, DELF level…)</li>
+        <li>Do one full official sample paper to find your weakest skill</li>
+        <li>Agree a weekly plan with your LFA tutor</li>
+      </ul>
+      <h2>The final week</h2>
+      <ul class="check">
+        <li>One timed listening and reading set every day</li>
+        <li>Two practice orals with your tutor</li>
+        <li>Review your error list: agreements, accents, verb endings</li>
+        <li>Check the exam address, start time and route</li>
+      </ul>
+      <h2>On the day</h2>
+      <ul class="check">
+        <li>Valid photo ID that matches your registration</li>
+        <li>Convocation letter, black pens, a watch if allowed</li>
+        <li>Arrive 30 minutes early</li>
+        <li>Read every instruction twice before you start</li>
+      </ul>
+      <div class="tip" style="margin-top:5mm"><b>Need help?</b> Message the academy team from your dashboard, or ask your tutor to run a mock exam with you.</div>
+    </div>
+  </div>
+  <p class="small" style="position:absolute;left:18mm;right:18mm;bottom:20mm">Exam information was taken from official and specialist sources (France Éducation international, CCI Paris Île-de-France, Digischool, Sorbonne Université) in November 2026. Always confirm details with your test center before booking.</p>
+  <div class="foot"><span><b>Learn French Academy</b> · learnfrenchacademy.com</span><span>8</span></div>
+</section>
+</body>
+</html>
