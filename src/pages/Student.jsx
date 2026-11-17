@@ -63,16 +63,16 @@ export function StudentHome({ name }) {
       </div>
       <div className="grid cols-2">
         <div className="panel">
-          <div className="panel-head"><h2>Coming up</h2><Link to="/classes" className="link alt">All classes</Link></div>
+          <div className="panel-head"><h2>After that</h2><Link to="/classes" className="link alt">My classes</Link></div>
           {classes && upcoming.length < 2 && <p className="empty">Nothing else scheduled yet.</p>}
-          <div className="list">{upcoming.slice(1, 5).map(c => (
+          <div className="list">{upcoming.slice(1, 2).map(c => (
             <div className="row" key={c.id}><span className="time">{fmtTime(c.starts_at)}</span>
               <div className="grow"><b>{topic(c)}</b><div className="meta">{fmtDay(c.starts_at)} · {c.duration_min} min</div></div></div>))}</div>
         </div>
         <div className="panel">
           <div className="panel-head"><h2>Your tutor</h2></div>
           <div className="row"><div className="av tutor-av">{(me.tutor?.full_name || '?').slice(0, 2).toUpperCase()}</div>
-            <div className="grow"><b>{me.tutor?.full_name || 'Not assigned yet'}</b><div className="meta">Questions? Message the academy team.</div></div></div>
+            <div className="grow"><b>{me.tutor?.full_name || 'Not assigned yet'}</b><div className="meta">Questions? <Link to="/messages" className="link alt">Message the academy team</Link>.</div></div></div>
           <div className="panel-head practice-cta"><h2>Practice</h2><Link to="/practice" className="link alt">Open</Link></div>
           <p className="meta">Listening, speaking and exam practice for {lvlLabel(me.level)}.</p>
         </div>
@@ -85,14 +85,14 @@ export function StudentClasses() {
   const [classes, err] = useMyClasses()
   const [notes] = useRows(() => sb.rpc('my_class_notes'))
   const [tab, setTab] = useState('upcoming')
-  const upcoming = (classes || []).filter(c => !ended(c))
+  const upcoming = (classes || []).filter(c => !ended(c)).slice(0, 2) // only the next two topics
   const past = (classes || []).filter(ended).reverse()
   const note = id => (notes || []).find(n => n.class_id === id)
   const shown = tab === 'upcoming' ? upcoming : past
   return (
     <section>
-      <PageHeader title="My classes" sub="Times are Lagos time. Join from here when it's time." />
-      <Tabs value={tab} onChange={setTab} tabs={[['upcoming', `Upcoming${classes ? ` (${upcoming.length})` : ''}`], ['past', `Past${classes ? ` (${past.length})` : ''}`]]} />
+      <PageHeader title="My classes" sub="Your next two classes. Times are Lagos time; join from here when it's time." />
+      <Tabs value={tab} onChange={setTab} tabs={[['upcoming', 'Next up'], ['past', `Past${classes ? ` (${past.length})` : ''}`]]} />
       <div className="panel">
         <State rows={classes && shown} err={err} empty={tab === 'upcoming' ? 'No upcoming classes yet.' : 'No past classes yet.'} />
         <div className="list">{shown.map(c => {
