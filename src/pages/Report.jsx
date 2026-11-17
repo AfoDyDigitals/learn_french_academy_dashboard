@@ -5,7 +5,7 @@ import { PageHeader, toast } from '../components'
 
 export default function Report() {
   const since = new Date(); since.setDate(since.getDate() - 14)
-  const [classes, err] = useRows(() => sb.from('classes').select('id, title, level, starts_at, duration_min, class_students(student_id, attended, students(full_name))').gte('starts_at', since.toISOString()).lte('starts_at', new Date().toISOString()).order('starts_at', { ascending: false }))
+  const [classes, err] = useRows(() => sb.from('classes').select('id, title, topic, level, starts_at, duration_min, class_students(student_id, attended, students(full_name))').gte('starts_at', since.toISOString()).lte('starts_at', new Date().toISOString()).order('starts_at', { ascending: false }))
   const [classId, setClassId] = useState('')
   const [att, setAtt] = useState({})
   const [form, setForm] = useState({ covered: '', homework: '', notes: '', duration_min: '' })
@@ -37,7 +37,7 @@ export default function Report() {
         <form className="panel form narrow" onSubmit={submit}>
           <div className="field"><label htmlFor="rc">Class</label>
             <select id="rc" value={classId} onChange={e => setClassId(e.target.value)}>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.level} · {fmtDay(c.starts_at)} · {c.title}</option>)}
+              {classes.map(c => <option key={c.id} value={c.id}>{c.level} · {fmtDay(c.starts_at)} · {c.topic || c.title}</option>)}
             </select></div>
           {cls?.class_students.length > 0 && (
             <fieldset className="field"><legend>Who attended?</legend>

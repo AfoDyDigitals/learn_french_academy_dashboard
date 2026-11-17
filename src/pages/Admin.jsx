@@ -110,7 +110,7 @@ export function AdminOverview({ name }) {
           <State rows={today} err={err} empty="No classes today." />
           <div className="list">{today?.map(c => (
             <div className="row" key={c.id}><span className="time">{fmtTime(c.starts_at)}</span><Lvl l={c.level} />
-              <div className="grow"><b>{c.title}</b><div className="meta">{c.profiles?.full_name || 'No tutor'} · {c.duration_min} min</div></div>
+              <div className="grow"><b>{c.title}</b><div className="meta">{c.topic ? `${c.topic} · ` : ''}{c.profiles?.full_name || 'No tutor'} · {c.duration_min} min</div></div>
               {c.meet_url && <a className="pill info" href={c.meet_url} target="_blank" rel="noreferrer">Meet</a>}</div>))}</div>
         </div>
         <div className="panel">
@@ -180,7 +180,7 @@ export function AdminClasses() {
   const endSchedule = async id => { await sb.rpc('end_schedule', { p_id: id }); toast('Schedule ended · upcoming classes removed'); reload(); reloadScheds() }
   const reassign = async (id, tutor_id) => { await sb.from('classes').update({ tutor_id: tutor_id || null, reminded_at: null }).eq('id', id); toast('Tutor changed'); reload() }
   const remove = async id => { await sb.from('classes').delete().eq('id', id); toast('Class removed'); reload() }
-  const shownClasses = (rows || []).filter(c => has(q, c.title, c.profiles?.full_name))
+  const shownClasses = (rows || []).filter(c => has(q, c.title, c.topic, c.profiles?.full_name))
   const shownScheds = (scheds || []).filter(s => has(q, s.title, s.profiles?.full_name) && (!f.tutor || s.tutor_id === f.tutor) && (!f.level || s.level === f.level))
   const tutorSelect = (value, onChange) => (
     <select aria-label="Tutor" className="inline-select" value={value || ''} onChange={e => onChange(e.target.value)}>
@@ -201,7 +201,7 @@ export function AdminClasses() {
           <State rows={rows && shownClasses} err={err} empty="No classes match. Try a different date range or clear the filters." />
           {shownClasses.length > 0 && <Table head={['Class', 'When', 'Tutor', 'Students', '']} rows={shownClasses.map(c => ({
             key: c.id, cells: [
-              <span className="cell-title"><Lvl l={c.level} /> {c.title}</span>,
+              <span className="cell-title"><Lvl l={c.level} /> {c.title}{c.topic && <small className="meta">{c.week_no ? `Week ${c.week_no}: ` : ''}{c.topic}</small>}</span>,
               <span className="nowrap">{fmtDay(c.starts_at)} · {fmtTime(c.starts_at)}</span>,
               tutorSelect(c.tutor_id, v => reassign(c.id, v)),
               c.class_students.length,

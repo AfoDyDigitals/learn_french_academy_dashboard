@@ -20,7 +20,7 @@ export default function Classes() {
             {cs.map(c => (
               <div className="slot" key={c.id}>
                 <span className="time">{fmtTime(c.starts_at)}</span><Lvl l={c.level} />
-                <div className="grow"><b>{c.title}</b><div className="meta">{c.duration_min} min</div></div>
+                <div className="grow"><b>{c.title}</b><div className="meta">{c.topic ? `${c.topic} · ` : ''}{c.week_no ? `Week ${c.week_no} · ` : ''}{c.duration_min} min</div></div>
                 {c.meet_url && <a className="pill info" href={c.meet_url} target="_blank" rel="noreferrer">Join Meet</a>}
               </div>
             ))}
