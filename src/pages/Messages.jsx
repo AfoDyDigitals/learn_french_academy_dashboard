@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { sb } from '../supabase'
 import { useRows } from '../ui'
 import { PageHeader } from '../components'
@@ -33,6 +33,25 @@ function Chat({ thread, me, title, onBack }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const end = useRef(null)
+  const box = useRef(null)
+  const input = useRef(null)
+  // Phones: the chat fills the visible screen and follows the on-screen keyboard
+  useEffect(() => {
+    const vv = window.visualViewport, el = box.current
+    const fit = () => {
+      el.style.setProperty('--vv-top', `${vv ? vv.offsetTop : 0}px`)
+      el.style.setProperty('--vv-h', `${vv ? vv.height : innerHeight}px`)
+      end.current?.scrollIntoView({ block: 'end' })
+    }
+    fit()
+    document.documentElement.classList.add('chat-open')
+    vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit); addEventListener('resize', fit)
+    return () => {
+      document.documentElement.classList.remove('chat-open')
+      vv?.removeEventListener('resize', fit); vv?.removeEventListener('scroll', fit); removeEventListener('resize', fit)
+    }
+  }, [])
+  const grow = el => { el.style.height = 'auto'; el.style.height = `${Math.min(el.scrollHeight, 140)}px` }
   const markRead = () => sb.rpc('mark_read', { p_thread: thread }).then(() => dispatchEvent(new Event('lfa-read')))
 
   useEffect(() => {
@@ -57,12 +76,12 @@ function Chat({ thread, me, title, onBack }) {
     const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body }).select().single()
     setBusy(false)
     if (error) return setErr(`Not sent: ${error.message}`)
-    setText(''); setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
+    setText(''); if (input.current) input.current.style.height = ''; input.current?.focus(); setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
   }
 
   return (
-    <div className="panel chat">
-      <div className="chat-head">{onBack && <button className="link alt" onClick={onBack}>← All</button>}<b>{title}</b></div>
+    <div className="panel chat" ref={box}>
+      <div className="chat-head">{onBack && <button className="chat-back" onClick={onBack} aria-label="Back">←</button>}<b>{title}</b></div>
       <div className="chat-body">
         {msgs === null ? <p className="meta">Loading…</p>
           : !msgs.length ? <p className="empty">No messages yet. Say hello 👋</p>
@@ -74,7 +93,7 @@ function Chat({ thread, me, title, onBack }) {
       </div>
       {err && <p className="note bad">{err}</p>}
       <form className="composer" onSubmit={send}>
-        <textarea rows={1} placeholder="Write a message…" value={text} onChange={e => setText(e.target.value)}
+        <textarea ref={input} rows={1} placeholder="Write a message…" value={text} onChange={e => { setText(e.target.value); grow(e.target) }}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !matchMedia('(pointer:coarse)').matches) send(e) }} />
         <button className="btn" disabled={busy || !text.trim()}>Send</button>
       </form>
@@ -84,10 +103,11 @@ function Chat({ thread, me, title, onBack }) {
 
 // Students and tutors: one conversation with the academy team
 export function Messages({ me }) {
+  const nav = useNavigate()
   return (
     <section>
       <PageHeader title="Messages" sub="Chat with the Learn French Academy team. We usually reply within a few hours." />
-      <Chat thread={me} me={me} title="Academy team" />
+      <Chat thread={me} me={me} title="Academy team" onBack={() => nav('/')} />
     </section>
   )
 }
