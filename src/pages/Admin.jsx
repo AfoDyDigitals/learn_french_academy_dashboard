@@ -16,7 +16,7 @@ const has = (q, ...vals) => !q || vals.some(v => (v || '').toLowerCase().include
 
 // Shared data
 const useTutors = () => useRows(() => sb.from('profiles').select('id, full_name, role, active').eq('role', 'tutor').order('full_name'))
-const useStudents = () => useRows(() => sb.from('students').select('*, profiles!students_tutor_id_fkey(full_name), class_students(attended)').order('full_name'))
+const useStudents = () => useRows(() => sb.from('students').select('*, profiles!students_tutor_id_fkey(full_name), login:profiles!students_user_id_fkey(active), class_students(attended)').order('full_name'))
 const tutorOpts = (tutors, all = false) => (tutors || []).filter(t => all || t.active)
   .map(t => [t.id, `${t.full_name || 'Unnamed tutor'}${t.active ? '' : ' (paused)'}`])
 const attendance = s => {
@@ -285,12 +285,14 @@ export function AdminStudents() {
             <select aria-label="Status" className="inline-select" value={s.status} onChange={e => update(s.id, { status: e.target.value }, 'Status changed')}>
               {['active', 'paused', 'finished'].map(x => <option key={x}>{x}</option>)}</select>,
             <span className="actions">
-              {s.user_id ? <span className="pill ok">Has login</span> : <button className="link alt" onClick={() => setLogin(s)}>Create login</button>}
+              {s.user_id ? <button className={`pill ${s.login?.active === false ? 'warn' : 'ok'}`} onClick={() => setLogin(s)}>{s.login?.active === false ? 'Login paused' : 'Has login'}</button>
+                : <button className="link alt" onClick={() => setLogin(s)}>Create login</button>}
               <button className="link alt" onClick={() => setSheet(s)}>Edit</button></span>,
           ] }))} />}
       </div>
       <Sheet open={!!login} title={`Login for ${login?.full_name}`} onClose={() => setLogin(null)}>
-        {login && <NewLogin key={login.id} student={login} onDone={reload} />}
+        {login && (login.user_id ? <LoginControls key={login.id} student={login} onDone={() => { setLogin(null); reload() }} onChange={reload} />
+          : <NewLogin key={login.id} student={login} onDone={reload} />)}
       </Sheet>
       <Sheet open={!!sheet} title={sheet === 'new' ? 'Add student' : `Edit ${sheet?.full_name}`} onClose={() => setSheet(null)}>
         <Form key={sheet?.id || 'new'} onDone={() => setSheet(null)} submit={sheet === 'new' ? 'Add student' : 'Save changes'}
@@ -383,6 +385,59 @@ export function AdminTutors({ me }) {
 
 // Admin creates the account directly; the create-tutor edge function does the privileged part
 const tempPassword = () => { const c = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint32Array(10)), n => c[n % c.length]).join('') }
+const copy = text => navigator.clipboard.writeText(text).then(() => toast('Copied'), () => toast('Copy failed, select and copy by hand'))
+// Calls the create-tutor edge function with a fresh session; returns an error message or null
+async function callLogins(body) {
+  const { error: re } = await sb.auth.refreshSession()
+  if (re) return 'Your session has expired. Sign out, sign in again, then retry.'
+  const { data, error } = await sb.functions.invoke('create-tutor', { body })
+  return data?.error || (error && (await error.context?.json?.().catch(() => null))?.error) || error?.message || null
+}
+
+// Manage a student's existing login: pause/resume, reset password, remove
+function LoginControls({ student, onDone, onChange }) {
+  const [paused, setPaused] = useState(student.login?.active === false)
+  const [pw, setPw] = useState(tempPassword)
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [reset, setReset] = useState(false)
+  const details = `Dashboard: ${location.origin}\nEmail: ${student.email}\nTemporary password: ${pw}`
+  async function togglePause() {
+    const { error } = await sb.from('profiles').update({ active: paused }).eq('id', student.user_id)
+    if (error) return setMsg(error.message)
+    setPaused(!paused); toast(paused ? 'Access resumed' : 'Access paused'); onChange()
+  }
+  async function run(body, ok) {
+    setBusy(true); setMsg('')
+    const err = await callLogins({ ...body, user_id: student.user_id })
+    setBusy(false)
+    if (err) return setMsg(err)
+    ok()
+  }
+  return (
+    <div className="form">
+      <p className="sheet-intro">Sign-in email: <b>{student.email}</b><br />Status: <b>{paused ? 'Paused' : 'Active'}</b></p>
+      <div className="field wide"><label>Access</label>
+        <small className="hint">{paused ? 'They cannot sign in or see anything until you resume.' : 'Pause blocks sign-in and all their data at once. You can resume anytime.'}</small>
+        <div className="form-actions"><button type="button" className={`btn ${paused ? '' : 'ghost'}`} onClick={togglePause}>{paused ? 'Resume access' : 'Pause access'}</button></div></div>
+      <div className="field wide"><label htmlFor="rs-pw">Reset password</label>
+        {reset ? <><pre className="creds">{details}</pre>
+          <div className="form-actions"><button type="button" className="btn" onClick={() => copy(details)}>Copy details</button></div></>
+        : <><div className="pw"><input id="rs-pw" minLength={8} value={pw} onChange={e => setPw(e.target.value)} />
+            <button type="button" className="pw-toggle" onClick={() => setPw(tempPassword())}>New</button>
+            <button type="button" className="pw-toggle copy" onClick={() => copy(pw)}>Copy</button></div>
+          <small className="hint">Use if they forgot it. Their old password stops working.</small>
+          <div className="form-actions"><button type="button" className="btn ghost" disabled={busy || pw.length < 8}
+            onClick={() => run({ action: 'reset', password: pw }, () => { setReset(true); toast('Password reset') })}>Set new password</button></div></>}</div>
+      <div className="field wide"><label>Remove login</label>
+        <small className="hint">Deletes their sign-in. Their student record, classes and payments stay. You can create a new login later.</small>
+        <div className="form-actions"><ConfirmButton className="btn danger" ask="Tap again to remove"
+          onConfirm={() => run({ action: 'revoke' }, () => { toast('Login removed'); onDone() })}>Remove login</ConfirmButton></div></div>
+      {msg && <p className="note bad">{msg}</p>}
+    </div>
+  )
+}
+
 // Creates a tutor login, or a student's login when `student` is given (linked to their record)
 function NewLogin({ onDone, student }) {
   const who = student ? 'student' : 'tutor'
@@ -394,9 +449,8 @@ function NewLogin({ onDone, student }) {
   const set = k => e => setV({ ...v, [k]: e.target.value })
   async function go(e) {
     e.preventDefault(); setBusy(true); setMsg('')
-    const { data, error } = await sb.functions.invoke('create-tutor', { body: v })
+    const err = await callLogins(v)
     setBusy(false)
-    const err = data?.error || (error && (await error.context?.json?.().catch(() => null))?.error) || error?.message
     if (err) return setMsg(err)
     setMade(v); toast(`${v.full_name} added`); onDone()
   }
@@ -406,7 +460,7 @@ function NewLogin({ onDone, student }) {
       <p className="sheet-intro"><b>{made.full_name}</b> can sign in now. Send them these details; they can change the password under Account.</p>
       <pre className="creds">{details}</pre>
       <div className="form-actions">
-        <button className="btn" onClick={() => navigator.clipboard.writeText(details).then(() => toast('Copied'))}>Copy details</button>
+        <button className="btn" onClick={() => copy(details)}>Copy details</button>
         {!student && <button className="btn ghost" onClick={() => { setMade(null); setV(blank()) }}>Add another</button>}
       </div>
     </div>
@@ -418,7 +472,8 @@ function NewLogin({ onDone, student }) {
       <div className="field wide"><label htmlFor="nt-email">Email</label><input id="nt-email" type="email" required autoComplete="off" value={v.email} onChange={set('email')} /></div>
       <div className="field wide"><label htmlFor="nt-pw">Temporary password</label>
         <div className="pw"><input id="nt-pw" required minLength={8} autoComplete="new-password" value={v.password} onChange={set('password')} />
-          <button type="button" className="pw-toggle" onClick={() => setV({ ...v, password: tempPassword() })}>New</button></div>
+          <button type="button" className="pw-toggle" onClick={() => setV({ ...v, password: tempPassword() })}>New</button>
+          <button type="button" className="pw-toggle copy" onClick={() => copy(v.password)}>Copy</button></div>
         <small className="hint">At least 8 characters. Tap New for a random one.</small></div>
       {msg && <p className="note bad">Not added: {msg}</p>}
       <div className="form-actions"><button className="btn" disabled={busy}>{busy ? 'Adding…' : `Create ${who} login`}</button></div>
