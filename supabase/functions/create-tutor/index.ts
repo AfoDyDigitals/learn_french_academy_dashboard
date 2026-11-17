@@ -12,11 +12,28 @@ Deno.serve(async req => {
   // Only signed-in admins may create accounts
   const token = (req.headers.get('Authorization') || '').replace('Bearer ', '')
   const { data: { user } } = await db.auth.getUser(token)
-  if (!user) return reply({ error: 'Not signed in' }, 401)
+  if (!user) return reply({ error: 'Your session has expired. Sign out, sign in again, then retry.' }, 401)
   const { data: me } = await db.from('profiles').select('role').eq('id', user.id).single()
   if (me?.role !== 'admin') return reply({ error: 'Only admins can add logins' }, 403)
 
-  const { email, password, full_name, student_id } = await req.json()
+  const body = await req.json()
+  const { email, password, full_name, student_id, action, user_id } = body
+
+  // Reset a tutor's or student's password, or remove a student's login (admins are never touched)
+  if (action === 'reset' || action === 'revoke') {
+    const { data: target } = await db.from('profiles').select('role').eq('id', user_id).single()
+    if (!target || target.role === 'admin') return reply({ error: 'Login not found' }, 404)
+    if (action === 'reset') {
+      if (!password || password.length < 8) return reply({ error: 'Temporary password must be at least 8 characters' }, 400)
+      const { error } = await db.auth.admin.updateUserById(user_id, { password })
+      return error ? reply({ error: error.message }, 400) : reply({ ok: true })
+    }
+    if (target.role !== 'student') return reply({ error: 'Only student logins can be removed here' }, 400)
+    await db.from('students').update({ user_id: null }).eq('user_id', user_id)
+    const { error } = await db.auth.admin.deleteUser(user_id)
+    return error ? reply({ error: error.message }, 400) : reply({ ok: true })
+  }
+
   if (!email || !full_name) return reply({ error: 'Name and email are required' }, 400)
   if (!password || password.length < 8) return reply({ error: 'Temporary password must be at least 8 characters' }, 400)
   if (student_id) {
