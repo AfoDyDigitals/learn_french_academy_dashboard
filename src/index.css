@@ -245,6 +245,14 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
 .exam-link span{font-size:13px;color:var(--muted)}
 .exam-link:hover{border-color:var(--blue)}
 
+.next-class{border-left:4px solid var(--blue);padding:20px 22px}
+.next-class .k{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.next-class h2{font-size:22px;margin-bottom:4px}
+.next-class .btn{margin-top:14px}
+.stat.alert{border-color:var(--red)}.stat.alert .n{color:var(--red);font-weight:600}
+.tutor-av{background:var(--blue-soft);color:var(--blue)}
+.practice-cta{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+
 /* ---------- Login ---------- */
 .login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
 .login .panel{width:100%;max-width:400px;margin:0;padding:28px}
@@ -282,6 +290,7 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
   .page-actions{width:100%}
   .page-actions .btn{flex:1}
   .stats,.stats.three{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats.three > :nth-child(3):last-child{grid-column:1/-1}
   .stat{padding:14px}
   .stat .v{font-size:24px}
   .stat .v.sm{font-size:17px}

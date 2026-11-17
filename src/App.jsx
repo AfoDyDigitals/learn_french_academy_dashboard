@@ -9,6 +9,7 @@ import Students from './pages/Students'
 import Report from './pages/Report'
 import { AdminOverview, AdminClasses, AdminStudents, AdminTutors, AdminReports, AdminPayments, AdminLibrary } from './pages/Admin'
 import Account from './pages/Account'
+import { StudentHome, StudentClasses, StudentPractice } from './pages/Student'
 import SetPassword from './pages/SetPassword'
 import { enablePush, pushEnabled } from './push'
 import { Toaster } from './components'
@@ -21,12 +22,14 @@ const ICON = {
   '/report': <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" />,
   '/reports': <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" />,
   '/tutors': <><circle cx="12" cy="7" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  '/practice': <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />,
   '/payments': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
 }
 const NavIcon = ({ to }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON[to]}</svg>
 
 // Tutors and admins get completely separate menus and pages
 const TUTOR_NAV = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'My students'], ['/report', 'Class report']]
+const STUDENT_NAV = [['/', 'Home'], ['/classes', 'My classes'], ['/practice', 'Practice']]
 const ADMIN_NAV = [['/', 'Overview'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library']]
 
 export default function App() {
@@ -65,6 +68,8 @@ export default function App() {
 
   const name = profile.full_name || session.user.email
   const isAdmin = profile.role === 'admin'
+  const isStudent = profile.role === 'student'
+  const role = isAdmin ? 'Admin' : isStudent ? 'Student' : 'Tutor'
   const signOut = () => sb.auth.signOut()
 
   if (!isAdmin && !profile.active) return (
@@ -72,7 +77,7 @@ export default function App() {
       <div className="panel">
         <img src="/logo.png" alt="" height="64" />
         <h1>Your access is paused</h1>
-        <p className="sub">Your tutor account is on hold. An admin will turn it back on when your contract resumes. Your classes and reports are kept.</p>
+        <p className="sub">{isStudent ? 'Your account is on hold. Please contact the academy to turn it back on.' : 'Your tutor account is on hold. An admin will turn it back on when your contract resumes. Your classes and reports are kept.'}</p>
         <button className="btn" onClick={signOut}>Sign out</button>
       </div>
     </div>
@@ -93,7 +98,7 @@ export default function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           </div>
-          <nav>{(isAdmin ? ADMIN_NAV : TUTOR_NAV).map(([to, label]) => <NavLink key={to} to={to} end><NavIcon to={to} />{label}</NavLink>)}</nav>
+          <nav>{(isAdmin ? ADMIN_NAV : isStudent ? STUDENT_NAV : TUTOR_NAV).map(([to, label]) => <NavLink key={to} to={to} end><NavIcon to={to} />{label}</NavLink>)}</nav>
           <div className="pushbox">
             {push === true ? <span>🔔 Notifications on</span>
               : <button className="link" onClick={async () => { const m = await enablePush(); setPush(m.startsWith('Notifications are on') ? true : m) }}>Turn on notifications</button>}
@@ -101,7 +106,7 @@ export default function App() {
           </div>
           <div className="who">
             <div className="av">{name.slice(0, 2).toUpperCase()}</div>
-            <div><b>{name}</b><br />{isAdmin ? 'Admin' : 'Tutor'} · <NavLink to="/account" className="link">Account</NavLink> · <button className="link" onClick={signOut}>Sign out</button></div>
+            <div><b>{name}</b><br />{role} · <NavLink to="/account" className="link">Account</NavLink> · <button className="link" onClick={signOut}>Sign out</button></div>
           </div>
         </div>
       </aside>
@@ -115,6 +120,14 @@ export default function App() {
             <Route path="/reports" element={<AdminReports />} />
             <Route path="/payments" element={<AdminPayments />} />
             <Route path="/library" element={<AdminLibrary />} />
+            <Route path="/account" element={<Account email={session.user.email} />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        ) : isStudent ? (
+          <Routes>
+            <Route path="/" element={<StudentHome name={name} />} />
+            <Route path="/classes" element={<StudentClasses />} />
+            <Route path="/practice" element={<StudentPractice />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
