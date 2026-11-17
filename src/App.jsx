@@ -9,6 +9,7 @@ import Students from './pages/Students'
 import Report from './pages/Report'
 import { AdminOverview, AdminClasses, AdminStudents, AdminTutors, AdminReports, AdminPayments, AdminLibrary } from './pages/Admin'
 import Account from './pages/Account'
+import { Messages, AdminMessages, useUnread } from './pages/Messages'
 import { StudentHome, StudentClasses, StudentPractice } from './pages/Student'
 import SetPassword from './pages/SetPassword'
 import { enablePush, pushEnabled } from './push'
@@ -23,15 +24,16 @@ const ICON = {
   '/reports': <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" />,
   '/tutors': <><circle cx="12" cy="7" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   '/practice': <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />,
+  '/messages': <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />,
   '/account': <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
   '/payments': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
 }
 const NavIcon = ({ to }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON[to]}</svg>
 
 // Tutors and admins get completely separate menus and pages
-const TUTOR_NAV = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'My students'], ['/report', 'Class report']]
-const STUDENT_NAV = [['/', 'Home'], ['/classes', 'My classes'], ['/practice', 'Practice'], ['/account', 'Account']]
-const ADMIN_NAV = [['/', 'Overview'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library']]
+const TUTOR_NAV = [['/', 'Today'], ['/messages', 'Messages'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'My students'], ['/report', 'Class report']]
+const STUDENT_NAV = [['/', 'Home'], ['/messages', 'Messages'], ['/classes', 'My classes'], ['/practice', 'Practice'], ['/account', 'Account']]
+const ADMIN_NAV = [['/', 'Overview'], ['/messages', 'Messages'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library']]
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -62,6 +64,8 @@ export default function App() {
 
   useEffect(() => { if (session) pushEnabled().then(on => on && setPush(true)) }, [session])
 
+  const unread = useUnread(profile?.active !== false ? profile?.id : null, profile?.role === 'admin')
+
   if (session === undefined) return null
   if (!session) return <Login />
   if (recovery) return <SetPassword onDone={() => setRecovery(false)} />
@@ -88,7 +92,8 @@ export default function App() {
     <div className="shell">
       <aside>
         <div className="brand"><img className="mark" src="/logo.png" alt="Learn French Academy logo" /><span>Learn French<br />Academy</span></div>
-        <button className="menu-btn" aria-label="Open menu" aria-expanded={menu} aria-controls="drawer" onClick={() => setMenu(true)}>
+        <button className="menu-btn" aria-label={unread ? `Open menu, ${unread} unread messages` : 'Open menu'} aria-expanded={menu} aria-controls="drawer" onClick={() => setMenu(true)}>
+          {unread > 0 && <span className="badge dot">{unread}</span>}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
         <div className="backdrop" data-open={menu} onClick={() => setMenu(false)} aria-hidden="true" />
@@ -99,7 +104,7 @@ export default function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           </div>
-          <nav>{(isAdmin ? ADMIN_NAV : isStudent ? STUDENT_NAV : TUTOR_NAV).map(([to, label]) => <NavLink key={to} to={to} end><NavIcon to={to} />{label}</NavLink>)}</nav>
+          <nav>{(isAdmin ? ADMIN_NAV : isStudent ? STUDENT_NAV : TUTOR_NAV).map(([to, label]) => <NavLink key={to} to={to} end onClick={() => setMenu(false)}><NavIcon to={to} />{label}{to === '/messages' && unread > 0 && <span className="badge">{unread}</span>}</NavLink>)}</nav>
           <div className="pushbox">
             {push === true ? <span>🔔 Notifications on</span>
               : <button className="link" onClick={async () => { const m = await enablePush(); setPush(m.startsWith('Notifications are on') ? true : m) }}>Turn on notifications</button>}
@@ -121,6 +126,7 @@ export default function App() {
             <Route path="/reports" element={<AdminReports />} />
             <Route path="/payments" element={<AdminPayments />} />
             <Route path="/library" element={<AdminLibrary />} />
+            <Route path="/messages" element={isAdmin ? <AdminMessages me={profile.id} /> : <Messages me={profile.id} />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
@@ -129,6 +135,7 @@ export default function App() {
             <Route path="/" element={<StudentHome name={name} />} />
             <Route path="/classes" element={<StudentClasses />} />
             <Route path="/practice" element={<StudentPractice />} />
+            <Route path="/messages" element={isAdmin ? <AdminMessages me={profile.id} /> : <Messages me={profile.id} />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
@@ -139,6 +146,7 @@ export default function App() {
             <Route path="/classes" element={<Classes />} />
             <Route path="/students" element={<Students />} />
             <Route path="/report" element={<Report />} />
+            <Route path="/messages" element={isAdmin ? <AdminMessages me={profile.id} /> : <Messages me={profile.id} />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
