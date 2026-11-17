@@ -16,7 +16,7 @@ const has = (q, ...vals) => !q || vals.some(v => (v || '').toLowerCase().include
 
 // Shared data
 const useTutors = () => useRows(() => sb.from('profiles').select('id, full_name, role, active').eq('role', 'tutor').order('full_name'))
-const useStudents = () => useRows(() => sb.from('students').select('*, profiles(full_name), class_students(attended)').order('full_name'))
+const useStudents = () => useRows(() => sb.from('students').select('*, profiles!students_tutor_id_fkey(full_name), class_students(attended)').order('full_name'))
 const tutorOpts = (tutors, all = false) => (tutors || []).filter(t => all || t.active)
   .map(t => [t.id, `${t.full_name || 'Unnamed tutor'}${t.active ? '' : ' (paused)'}`])
 const attendance = s => {
@@ -245,7 +245,7 @@ export function AdminClasses() {
 }
 
 // ---------- Students ----------
-const STUDENT_COLS = ['full_name', 'email', 'phone', 'country', 'level', 'goal', 'exam_date', 'hours_per_week', 'tutor_id']
+const STUDENT_COLS = ['full_name', 'email', 'phone', 'country', 'level', 'goal', 'exam_date', 'hours_per_week', 'tutor_id', 'payment_due_date']
 export function AdminStudents() {
   const [tutors] = useTutors()
   const [students, err, reload] = useStudents()
@@ -253,6 +253,7 @@ export function AdminStudents() {
   const defaults = { status: 'active' }
   const [f, setF] = useState(defaults)
   const [sheet, setSheet] = useState(null) // 'new' | student
+  const [login, setLogin] = useState(null) // student getting a login
   const update = async (id, patch, msg) => { await sb.from('students').update(patch).eq('id', id); toast(msg); reload() }
   async function save(v) {
     const row = clean(Object.fromEntries(STUDENT_COLS.map(k => [k, v[k] ?? null])))
@@ -283,15 +284,21 @@ export function AdminStudents() {
             <Bar pct={attendance(s)} />,
             <select aria-label="Status" className="inline-select" value={s.status} onChange={e => update(s.id, { status: e.target.value }, 'Status changed')}>
               {['active', 'paused', 'finished'].map(x => <option key={x}>{x}</option>)}</select>,
-            <button className="link alt" onClick={() => setSheet(s)}>Edit</button>,
+            <span className="actions">
+              {s.user_id ? <span className="pill ok">Has login</span> : <button className="link alt" onClick={() => setLogin(s)}>Create login</button>}
+              <button className="link alt" onClick={() => setSheet(s)}>Edit</button></span>,
           ] }))} />}
       </div>
+      <Sheet open={!!login} title={`Login for ${login?.full_name}`} onClose={() => setLogin(null)}>
+        {login && <NewLogin key={login.id} student={login} onDone={reload} />}
+      </Sheet>
       <Sheet open={!!sheet} title={sheet === 'new' ? 'Add student' : `Edit ${sheet?.full_name}`} onClose={() => setSheet(null)}>
         <Form key={sheet?.id || 'new'} onDone={() => setSheet(null)} submit={sheet === 'new' ? 'Add student' : 'Save changes'}
           initial={sheet && sheet !== 'new' ? Object.fromEntries(STUDENT_COLS.map(k => [k, sheet[k] ?? ''])) : { goal: 'general' }}
           fields={[['full_name', 'Full name'], ['email', 'Email', 'email'], ['phone', 'Phone', 'tel'], ['country', 'Country'],
             ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TEF/TCF prep']]],
-            ['exam_date', 'TEF/TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)]]}
+            ['exam_date', 'TEF/TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)],
+            ['payment_due_date', 'Next payment due', 'date', null, null, 'Students are reminded 2 days and 1 day before']]}
           onSave={save} />
       </Sheet>
     </section>
@@ -365,7 +372,7 @@ export function AdminTutors({ me }) {
         </div>
       </Sheet>
       <Sheet open={help} title="Add a tutor" onClose={() => setHelp(false)}>
-        <NewTutor onDone={reload} />
+        <NewLogin onDone={reload} />
         {tutors.length > 0 && <div className="form promote"><div className="field wide"><label htmlFor="promote">Or make an existing tutor an admin</label>
           <select id="promote" value="" onChange={e => { if (e.target.value) { update(e.target.value, { role: 'admin' }, 'Now an admin'); setHelp(false) } }}>
             <option value="">Choose a tutor…</option>{tutors.map(t => <option key={t.id} value={t.id}>{t.full_name || 'Unnamed tutor'}</option>)}</select></div></div>}
@@ -376,8 +383,10 @@ export function AdminTutors({ me }) {
 
 // Admin creates the account directly; the create-tutor edge function does the privileged part
 const tempPassword = () => { const c = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; return Array.from(crypto.getRandomValues(new Uint32Array(10)), n => c[n % c.length]).join('') }
-function NewTutor({ onDone }) {
-  const blank = () => ({ full_name: '', email: '', password: tempPassword() })
+// Creates a tutor login, or a student's login when `student` is given (linked to their record)
+function NewLogin({ onDone, student }) {
+  const who = student ? 'student' : 'tutor'
+  const blank = () => ({ full_name: student?.full_name || '', email: student?.email || '', password: tempPassword(), student_id: student?.id })
   const [v, setV] = useState(blank)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -398,7 +407,7 @@ function NewTutor({ onDone }) {
       <pre className="creds">{details}</pre>
       <div className="form-actions">
         <button className="btn" onClick={() => navigator.clipboard.writeText(details).then(() => toast('Copied'))}>Copy details</button>
-        <button className="btn ghost" onClick={() => { setMade(null); setV(blank()) }}>Add another</button>
+        {!student && <button className="btn ghost" onClick={() => { setMade(null); setV(blank()) }}>Add another</button>}
       </div>
     </div>
   )
@@ -412,7 +421,7 @@ function NewTutor({ onDone }) {
           <button type="button" className="pw-toggle" onClick={() => setV({ ...v, password: tempPassword() })}>New</button></div>
         <small className="hint">At least 8 characters. Tap New for a random one.</small></div>
       {msg && <p className="note bad">Not added: {msg}</p>}
-      <div className="form-actions"><button className="btn" disabled={busy}>{busy ? 'Adding…' : 'Add tutor'}</button></div>
+      <div className="form-actions"><button className="btn" disabled={busy}>{busy ? 'Adding…' : `Create ${who} login`}</button></div>
     </form>
   )
 }

@@ -35,7 +35,7 @@ export default function Login() {
       {mode === 'signin' ? (
         <form className="panel" onSubmit={signIn}>
           <img src="/logo.png" alt="" height="64" />
-          <h1>Tutor sign in</h1>
+          <h1>Sign in</h1>
           <p className="sub">Learn French Academy</p>
           <div className="field"><label htmlFor="em">Email</label><input id="em" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div className="field"><label htmlFor="pw">Password</label><PasswordInput id="pw" value={password} onChange={e => setPassword(e.target.value)} /></div>
