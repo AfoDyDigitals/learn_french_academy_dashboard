@@ -373,4 +373,19 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 }
 .composer textarea,.inbox-search{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:11px 14px;outline:none}
 .composer textarea:focus,.inbox-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-@media (min-width:861px){.chat-head .link{display:none}}
+@media (min-width:861px){.chat-back{display:none}}
+.chat-back{border:0;background:none;color:var(--blue);font-size:22px;line-height:1;width:40px;height:40px;margin:-8px 0 -8px -10px;border-radius:10px;cursor:pointer}
+.chat-back:hover{background:var(--blue-soft)}
+.chat-head b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composer .btn{flex:none}
+/* Phones: chat takes the whole visible screen, sized to the area above the keyboard */
+@media (max-width:860px){
+  html.chat-open,html.chat-open body{overflow:hidden;overscroll-behavior:none}
+  .chat{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100dvh);z-index:40;border-radius:0;border:0;margin:0;box-shadow:none}
+  .chat-head{padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;min-height:56px}
+  .chat-body{padding:12px 14px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .bubble{max-width:85%}
+  .composer{padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px))}
+  .composer textarea{font-size:16px} /* 16px stops iPhone zooming in on focus */
+  .inbox.has-open .inbox-list{display:none}
+}
