@@ -144,7 +144,8 @@ export function ConfirmButton({ children, ask = 'Tap again to confirm', onConfir
 export function ExamPractice({ links }) {
   return (
     <div className="exam">
-      <div className="exam-head"><span className="lvl TCF">Exams</span><b>Exam practice</b></div>
+      <div className="exam-head"><span className="lvl TCF">Exams</span><b>Exam practice</b>
+        <a className="btn ghost exam-dl" href="/guides/strategy.html" target="_blank" rel="noreferrer">Strategy guide (PDF)</a></div>
       <div className="exam-links">{links.map(([t, d, u]) => (
         <a key={u} className="exam-link" href={u} target="_blank" rel="noreferrer"><b>{t} ↗</b><span>{d}</span></a>))}</div>
     </div>
