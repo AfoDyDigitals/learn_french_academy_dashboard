@@ -27,6 +27,22 @@ export function useUnread(me, isAdmin) {
   return n
 }
 
+const MAX_MB = 15
+const kb = n => n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`
+const clock = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+const Icon = ({ d }) => <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+const CLIP = <path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />
+const MIC = <><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>
+
+// Shows a photo, a voice note player, or a download link
+function Attachment({ m, url }) {
+  if (!url) return <p className="att-file meta">Loading attachment…</p>
+  if (m.file_type?.startsWith('image/')) return <a href={url} target="_blank" rel="noreferrer"><img className="att-img" src={url} alt={m.file_name || 'Photo'} loading="lazy" /></a>
+  if (m.file_type?.startsWith('audio/')) return <audio className="att-audio" controls preload="metadata" src={url} />
+  return <a className="att-file" href={url} target="_blank" rel="noreferrer" download={m.file_name}>
+    <Icon d={CLIP} /><span><b>{m.file_name}</b><small>{m.file_size ? kb(m.file_size) : ''} · Download</small></span></a>
+}
+
 function Chat({ thread, me, title, onBack }) {
   const [msgs, setMsgs] = useState(null)
   const [text, setText] = useState('')
@@ -35,6 +51,10 @@ function Chat({ thread, me, title, onBack }) {
   const end = useRef(null)
   const box = useRef(null)
   const input = useRef(null)
+  const picker = useRef(null)
+  const [urls, setUrls] = useState({})
+  const [rec, setRec] = useState(null) // { recorder, started, secs } while recording
+  const [secs, setSecs] = useState(0)
   // Phones: the chat fills the visible screen and follows the on-screen keyboard
   useEffect(() => {
     const vv = window.visualViewport, el = box.current
@@ -67,6 +87,51 @@ function Chat({ thread, me, title, onBack }) {
     return () => { sb.removeChannel(ch) }
   }, [thread]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [msgs])
+  // Private files: get short-lived links for any attachment we haven't loaded yet
+  useEffect(() => {
+    const need = (msgs || []).map(m => m.file_path).filter(p => p && !urls[p])
+    if (!need.length) return
+    sb.storage.from('attachments').createSignedUrls(need, 3600)
+      .then(({ data }) => data && setUrls(u => ({ ...u, ...Object.fromEntries(data.filter(d => d.signedUrl).map(d => [d.path, d.signedUrl])) })))
+  }, [msgs]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!rec) return; const t = setInterval(() => setSecs(Math.round((Date.now() - rec.started) / 1000)), 500); return () => clearInterval(t) }, [rec])
+
+  // Upload a file to this conversation's folder, then post it as a message (current text becomes the caption)
+  async function sendFile(file) {
+    if (!file) return
+    if (file.size > MAX_MB * 1048576) return setErr(`That file is ${kb(file.size)}. The limit is ${MAX_MB} MB.`)
+    setBusy(true); setErr('')
+    const path = `${thread}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, '_').slice(-80)}`
+    const up = await sb.storage.from('attachments').upload(path, file, { contentType: file.type || 'application/octet-stream' })
+    if (up.error) { setBusy(false); return setErr(`Not sent: ${up.error.message}`) }
+    const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body: text.trim(),
+      file_path: path, file_name: file.name, file_type: file.type || 'application/octet-stream', file_size: file.size }).select().single()
+    setBusy(false)
+    if (error) { sb.storage.from('attachments').remove([path]); return setErr(`Not sent: ${error.message}`) }
+    setText(''); if (input.current) input.current.style.height = ''
+    setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
+  }
+
+  // Voice notes: tap the mic to record, then send or cancel
+  async function startRec() {
+    setErr('')
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return setErr('Voice notes are not supported in this browser.')
+    let stream
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }) } catch { return setErr('Allow microphone access to record a voice note.') }
+    const type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(t => MediaRecorder.isTypeSupported(t)) || ''
+    const recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined)
+    const chunks = []
+    recorder.ondataavailable = e => e.data.size && chunks.push(e.data)
+    recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop())
+      if (recorder.cancelled || !chunks.length) return
+      const mime = (recorder.mimeType || type || 'audio/webm').split(';')[0]
+      sendFile(new File(chunks, `Voice note ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.${mime.includes('mp4') ? 'm4a' : 'webm'}`, { type: mime }))
+    }
+    recorder.start()
+    setSecs(0); setRec({ recorder, started: Date.now() })
+  }
+  const stopRec = cancel => { if (!rec) return; rec.recorder.cancelled = cancel; rec.recorder.stop(); setRec(null) }
 
   async function send(e) {
     e.preventDefault()
@@ -87,16 +152,30 @@ function Chat({ thread, me, title, onBack }) {
           : !msgs.length ? <p className="empty">No messages yet. Say hello 👋</p>
           : msgs.map(m => (
             <div key={m.id} className={`bubble ${m.sender === me ? 'mine' : ''}`}>
-              <p>{m.body}</p><small>{stamp(m.created_at)}{m.sender === me && m.read_at ? ' · Seen' : ''}</small>
+              {m.file_path && <Attachment m={m} url={urls[m.file_path]} />}
+              {m.body && <p>{m.body}</p>}<small>{stamp(m.created_at)}{m.sender === me && m.read_at ? ' · Seen' : ''}</small>
             </div>))}
         <div ref={end} />
       </div>
       {err && <p className="note bad">{err}</p>}
-      <form className="composer" onSubmit={send}>
-        <textarea ref={input} rows={1} placeholder="Write a message…" value={text} onChange={e => { setText(e.target.value); grow(e.target) }}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !matchMedia('(pointer:coarse)').matches) send(e) }} />
-        <button className="btn" disabled={busy || !text.trim()}>Send</button>
-      </form>
+      {rec ? (
+        <div className="composer recording">
+          <button type="button" className="link danger" onClick={() => stopRec(true)}>Cancel</button>
+          <span className="rec-dot" aria-hidden="true" /><span className="grow">Recording {clock(secs)}</span>
+          <button type="button" className="btn" onClick={() => stopRec(false)}>Send</button>
+        </div>
+      ) : (
+        <form className="composer" onSubmit={send}>
+          <input ref={picker} type="file" hidden accept="image/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+            onChange={e => { sendFile(e.target.files[0]); e.target.value = '' }} />
+          <button type="button" className="icon-btn" aria-label="Attach a photo or file" disabled={busy} onClick={() => picker.current.click()}><Icon d={CLIP} /></button>
+          <textarea ref={input} rows={1} placeholder={busy ? 'Sending…' : 'Write a message…'} value={text} onChange={e => { setText(e.target.value); grow(e.target) }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !matchMedia('(pointer:coarse)').matches) send(e) }} />
+          {text.trim()
+            ? <button className="btn" disabled={busy}>Send</button>
+            : <button type="button" className="icon-btn mic" aria-label="Record a voice note" disabled={busy} onClick={startRec}><Icon d={MIC} /></button>}
+        </form>
+      )}
     </div>
   )
 }
