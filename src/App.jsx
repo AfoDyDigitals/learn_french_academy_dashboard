@@ -23,13 +23,14 @@ const ICON = {
   '/reports': <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" />,
   '/tutors': <><circle cx="12" cy="7" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   '/practice': <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />,
+  '/account': <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
   '/payments': <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
 }
 const NavIcon = ({ to }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON[to]}</svg>
 
 // Tutors and admins get completely separate menus and pages
 const TUTOR_NAV = [['/', 'Today'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'My students'], ['/report', 'Class report']]
-const STUDENT_NAV = [['/', 'Home'], ['/classes', 'My classes'], ['/practice', 'Practice']]
+const STUDENT_NAV = [['/', 'Home'], ['/classes', 'My classes'], ['/practice', 'Practice'], ['/account', 'Account']]
 const ADMIN_NAV = [['/', 'Overview'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library']]
 
 export default function App() {
@@ -70,7 +71,7 @@ export default function App() {
   const isAdmin = profile.role === 'admin'
   const isStudent = profile.role === 'student'
   const role = isAdmin ? 'Admin' : isStudent ? 'Student' : 'Tutor'
-  const signOut = () => sb.auth.signOut()
+  const signOut = () => sb.auth.signOut({ scope: 'local' }) // only this device; other devices stay signed in
 
   if (!isAdmin && !profile.active) return (
     <div className="login">

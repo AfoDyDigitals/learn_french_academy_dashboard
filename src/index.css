@@ -336,3 +336,9 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
   .filter-panel{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+/* Password field with New + Copy */
+.pw:has(.copy) input{padding-right:118px}
+.pw:has(.copy) .pw-toggle:not(.copy){right:56px}
+button.pill{border:0;cursor:pointer;font-family:inherit}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.danger.asking{filter:brightness(.9)}
