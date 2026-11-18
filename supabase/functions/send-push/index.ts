@@ -11,6 +11,9 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 
 async function sendEmail(to: string, title: string, preview: string, url: string) {
+  const isMsg = url.startsWith('/messages')
+  const heading = isMsg ? 'You have a new message' : title
+  const button = isMsg ? 'Open messages' : url.startsWith('/payments') ? 'View payments' : 'Open dashboard'
   const key = Deno.env.get('RESEND_API_KEY')
   if (!key) return 'no RESEND_API_KEY'
   const r = await fetch('https://api.resend.com/emails', {
@@ -18,15 +21,15 @@ async function sendEmail(to: string, title: string, preview: string, url: string
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: Deno.env.get('EMAIL_FROM') || 'Learn French Academy <onboarding@resend.dev>',
-      to, subject: 'You have a new message',
-      text: `${title}\n\n"${preview}"\n\nOpen your messages: ${SITE}${url}\n\nLearn French Academy`,
+      to, subject: heading,
+      text: `${heading}\n\n${isMsg ? `${title}\n\n"${preview}"` : preview}\n\n${button}: ${SITE}${url}\n\nLearn French Academy`,
       html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;color:#1d1a5e">
         <img src="${SITE}/logo.png" alt="Learn French Academy" height="48">
-        <h2 style="margin:16px 0 8px">You have a new message</h2>
-        <p style="margin:0 0 4px;color:#5d6185">${esc(title)}</p>
+        <h2 style="margin:16px 0 8px">${esc(heading)}</h2>
+        ${isMsg ? `<p style="margin:0 0 4px;color:#5d6185">${esc(title)}</p>` : ''}
         <blockquote style="margin:12px 0;padding:10px 14px;background:#f3f6fc;border-left:3px solid #2563ff">${esc(preview)}</blockquote>
-        <a href="${SITE}${url}" style="display:inline-block;background:#2563ff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Open messages</a>
-        <p style="font-size:12px;color:#5d6185;margin-top:24px">Learn French Academy · Reply in the dashboard, not to this email.</p></div>`,
+        <a href="${SITE}${url}" style="display:inline-block;background:#2563ff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">${button}</a>
+        <p style="font-size:12px;color:#5d6185;margin-top:24px">Learn French Academy · Questions? Message us in the dashboard.</p></div>`,
     }),
   })
   return r.ok ? null : `resend ${r.status} ${await r.text()}`
@@ -59,7 +62,7 @@ Deno.serve(async () => {
     }
   }
 
-  // Email for new messages: newest per person, skipped if they were emailed in the last few minutes
+  // Emails (new messages, payment reminders): newest per person, skipped if they were emailed in the last few minutes
   const errors: string[] = []
   let emailed = 0
   const latest = new Map<string, typeof fresh[0]>()
