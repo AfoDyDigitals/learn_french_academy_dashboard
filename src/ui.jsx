@@ -18,7 +18,7 @@ export const greeting = name => `${new Date().getHours() < 18 ? 'Bonjour' : 'Bon
 // Free exam practice, shown at the top of the library
 export const EXAM_PRACTICE = [
   ['TCF practice tests', 'TV5Monde · free exercises by section', 'https://apprendre.tv5monde.com/fr/tcf'],
-  ['TEF preparation', 'CCI Paris (official) · sample papers and tips', 'https://lefrancaisdesaffaires.fr/en/tests-diplomas/prepare-for-the-tef'],
+  ['TEF Canada preparation', 'CCI Paris (official) · how to prepare', 'https://www.lefrancaisdesaffaires.fr/en/candidate/test-evaluation-francais/tef-canada/preparation/'],
 ]
 
 export const fmtTime = d => new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
