@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { sb } from '../supabase'
-import { useRows, Lvl, lvlLabel, fmtDay, fmtTime, State, greeting } from '../ui'
+import { useRows, Lvl, lvlLabel, fmtDay, fmtTime, State, greeting, LEVEL_ORDER, progressOf, progressLabel } from '../ui'
 import { PageHeader, Tabs } from '../components'
 import Library from './Library'
 
 // The signed-in student's own record (RLS returns only theirs)
 export const useMe = () => useRows(() => sb.from('students')
-  .select('id, full_name, level, goal, exam_date, payment_due_date, tutor:profiles!students_tutor_id_fkey(full_name), class_students(attended)').maybeSingle())
+  .select('id, full_name, level, level_started_on, goal, exam_date, payment_due_date, tutor:profiles!students_tutor_id_fkey(full_name), class_students(attended)').maybeSingle())
 const useMyClasses = () => useRows(() => sb.from('classes')
   .select('id, title, topic, level, week_no, starts_at, duration_min, meet_url, tutor:profiles(full_name), class_students(attended)').order('starts_at'))
 
@@ -26,6 +26,32 @@ const examLinks = level => {
     ['TCF practice tests', 'TV5Monde · free exercises by section', 'https://apprendre.tv5monde.com/fr/tcf'],
     ['TEF Canada preparation', 'CCI Paris (official) · how to prepare', 'https://www.lefrancaisdesaffaires.fr/en/candidate/test-evaluation-francais/tef-canada/preparation/'],
   ]
+}
+
+// Progress through the current level plus the A1 → C2 journey
+function Progress({ me }) {
+  const [lengths] = useRows(() => sb.from('level_lengths').select('*'))
+  const [results] = useRows(() => sb.from('level_results').select('level, passed, score, exam_date').order('exam_date'))
+  if (!LEVEL_ORDER.includes(me.level)) return null
+  const p = progressOf(me.level, me.level_started_on, lengths)
+  const passed = new Set((results || []).filter(r => r.passed).map(r => r.level))
+  const cur = LEVEL_ORDER.indexOf(me.level)
+  return (
+    <div className="panel progress-card">
+      <div className="panel-head"><h2>Your progress</h2>{p && <span className="meta">{progressLabel(p)}</span>}</div>
+      {p?.weeks ? <div className="bar big" role="progressbar" aria-valuenow={p.pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${lvlLabel(me.level)} progress`}><i style={{ width: `${p.pct}%` }} /></div> : null}
+      <p className="meta">{!p ? 'Your progress will appear once your level start date is set.'
+        : !p.weeks ? `You're in week ${p.week} of ${lvlLabel(me.level)}. The course length will be shown here soon.`
+        : p.late ? 'Your end-of-level exam is due. Your tutor will confirm the date with you.'
+        : p.assessment ? 'Assessment week: this is your end-of-level exam. Bonne chance!'
+        : `Week ${p.weeks} is your end-of-level exam. Pass it to unlock ${LEVEL_ORDER[cur + 1] || 'your certificate'}.`}</p>
+      <ol className="journey">{LEVEL_ORDER.map((l, i) => {
+        const done = i < cur || passed.has(l)
+        return <li key={l} className={done ? 'done' : i === cur ? 'now' : 'locked'} aria-label={`${l}: ${done ? 'completed' : i === cur ? 'current level' : 'locked'}`}>
+          <span>{done ? '✓' : i === cur ? l : '🔒'}</span><small>{l}</small></li>
+      })}</ol>
+    </div>
+  )
 }
 
 const NotLinked = () => <div className="panel"><p>Your login isn't linked to a student record yet. Please contact the academy.</p></div>
@@ -53,6 +79,7 @@ export function StudentHome({ name }) {
           {next.meet_url && <a className="btn" href={next.meet_url} target="_blank" rel="noreferrer">Join class</a>}
         </>}
       </div>
+      <Progress me={me} />
       <div className="stats three">
         <div className="panel stat"><div className="k">Your level</div><div className="v"><Lvl l={me.level} /></div>
           <div className="n">{me.goal === 'tcf' ? `TEF/TCF prep${me.exam_date ? ` · exam ${fmtDay(me.exam_date)}` : ''}` : 'General French'}</div></div>

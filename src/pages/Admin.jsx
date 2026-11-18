@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { sb } from '../supabase'
-import { useRows, Lvl, fmtDay, fmtTime, State, LEVELS, greeting, EXAM_PRACTICE } from '../ui'
+import { useRows, Lvl, fmtDay, fmtTime, State, LEVELS, greeting, EXAM_PRACTICE, LEVEL_ORDER, progressOf, progressLabel } from '../ui'
 import { PageHeader, AddButton, Tabs, Sheet, Toolbar, Table, ConfirmButton, toast, ExamPractice } from '../components'
 
 const SKILLS = ['Listening', 'Speaking', 'Reading', 'Writing', 'Grammar']
@@ -245,7 +245,79 @@ export function AdminClasses() {
 }
 
 // ---------- Students ----------
-const STUDENT_COLS = ['full_name', 'email', 'phone', 'country', 'level', 'goal', 'exam_date', 'hours_per_week', 'tutor_id', 'payment_due_date']
+const STUDENT_COLS = ['full_name', 'email', 'phone', 'country', 'level', 'level_started_on', 'goal', 'exam_date', 'hours_per_week', 'tutor_id', 'payment_due_date']
+
+// Admin: how long each level runs. Null = not decided yet.
+function LevelLengths({ lengths, onDone }) {
+  const [v, setV] = useState(Object.fromEntries(LEVEL_ORDER.map(l => [l, (lengths || []).find(x => x.level === l)?.weeks ?? ''])))
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  async function save(e) {
+    e.preventDefault(); setBusy(true); setMsg('')
+    const rows = LEVEL_ORDER.map(level => ({ level, weeks: v[level] === '' ? null : Number(v[level]) }))
+    const { error } = await sb.from('level_lengths').upsert(rows)
+    setBusy(false)
+    if (error) return setMsg(error.message)
+    toast('Level lengths saved'); onDone()
+  }
+  return (
+    <form className="form" onSubmit={save}>
+      <p className="sheet-intro">Total weeks per level, including the final assessment week. Leave blank if not decided yet; students then see their week number without a total.</p>
+      {LEVEL_ORDER.map(l => (
+        <div className="field" key={l}><label htmlFor={`len-${l}`}>{l}</label>
+          <input id={`len-${l}`} type="number" min={1} max={104} placeholder="Not set" value={v[l]} onChange={e => setV({ ...v, [l]: e.target.value })} /></div>))}
+      {msg && <p className="note bad">{msg}</p>}
+      <div className="form-actions"><button className="btn" disabled={busy}>Save lengths</button></div>
+    </form>
+  )
+}
+
+// Admin: record an end-of-level exam. A pass on the current level unlocks the next one.
+function ExamResults({ student, onDone }) {
+  const [rows, , reload] = useRows(() => sb.from('level_results').select('*').eq('student_id', student.id).order('exam_date', { ascending: false }), [student.id])
+  const [v, setV] = useState({ level: LEVEL_ORDER.includes(student.level) ? student.level : 'A1', passed: '', score: '', exam_date: new Date().toISOString().slice(0, 10), notes: '' })
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  async function save(e) {
+    e.preventDefault()
+    if (v.passed === '') return setMsg('Choose pass or fail.')
+    setBusy(true); setMsg('')
+    const { data, error } = await sb.rpc('record_level_result', { p_student: student.id, p_level: v.level, p_passed: v.passed === 'yes',
+      p_score: v.score === '' ? null : Number(v.score), p_exam_date: v.exam_date || null, p_notes: v.notes || null })
+    setBusy(false)
+    if (error) return setMsg(error.message)
+    toast(v.passed === 'yes' && data !== student.level ? `Passed! ${student.full_name} moved to ${data}` : 'Result saved')
+    reload(); onDone(); setV({ ...v, passed: '', score: '', notes: '' })
+  }
+  return (
+    <div className="form">
+      <form className="form" onSubmit={save}>
+        <div className="field"><label htmlFor="ex-level">Level</label>
+          <select id="ex-level" value={v.level} onChange={e => setV({ ...v, level: e.target.value })}>{LEVEL_ORDER.map(l => <option key={l}>{l}</option>)}</select></div>
+        <div className="field"><label htmlFor="ex-date">Exam date</label>
+          <input id="ex-date" type="date" value={v.exam_date} onChange={e => setV({ ...v, exam_date: e.target.value })} /></div>
+        <div className="field"><label>Result</label>
+          <div className="seg">{[['yes', 'Pass'], ['no', 'Fail']].map(([k, t]) => (
+            <button type="button" key={k} className={`seg-btn ${v.passed === k ? (k === 'yes' ? 'on ok' : 'on bad') : ''}`} aria-pressed={v.passed === k} onClick={() => setV({ ...v, passed: k })}>{t}</button>))}</div></div>
+        <div className="field"><label htmlFor="ex-score">Score % (optional)</label>
+          <input id="ex-score" type="number" min={0} max={100} step="0.5" value={v.score} onChange={e => setV({ ...v, score: e.target.value })} /></div>
+        <div className="field wide"><label htmlFor="ex-notes">Notes (optional)</label>
+          <textarea id="ex-notes" rows={2} value={v.notes} onChange={e => setV({ ...v, notes: e.target.value })} /></div>
+        {v.passed === 'yes' && v.level === student.level && LEVEL_ORDER.indexOf(v.level) < 5 &&
+          <p className="note wide">Saving moves {student.full_name} to {LEVEL_ORDER[LEVEL_ORDER.indexOf(v.level) + 1]} and restarts their weekly progress.</p>}
+        {msg && <p className="note bad wide">{msg}</p>}
+        <div className="form-actions"><button className="btn" disabled={busy}>Save result</button></div>
+      </form>
+      <h3 className="sheet-sub">History</h3>
+      {rows && !rows.length && <p className="empty">No exam results yet.</p>}
+      <div className="list">{(rows || []).map(r => (
+        <div className="row" key={r.id}><Lvl l={r.level} />
+          <div className="grow"><b>{r.passed ? 'Passed' : 'Not passed'}{r.score !== null ? ` · ${r.score}%` : ''}</b>
+            <div className="meta">{fmtDay(r.exam_date)}{r.notes ? ` · ${r.notes}` : ''}</div></div>
+          <span className={`pill ${r.passed ? 'ok' : 'bad'}`}>{r.passed ? 'Pass' : 'Fail'}</span></div>))}</div>
+    </div>
+  )
+}
 export function AdminStudents() {
   const [tutors] = useTutors()
   const [students, err, reload] = useStudents()
@@ -254,6 +326,9 @@ export function AdminStudents() {
   const [f, setF] = useState(defaults)
   const [sheet, setSheet] = useState(null) // 'new' | student
   const [login, setLogin] = useState(null) // student getting a login
+  const [exam, setExam] = useState(null) // student whose exam result is being recorded
+  const [lengths, , reloadLengths] = useRows(() => sb.from('level_lengths').select('*').order('level'))
+  const [editLengths, setEditLengths] = useState(false)
   const update = async (id, patch, msg) => { await sb.from('students').update(patch).eq('id', id); toast(msg); reload() }
   async function save(v) {
     const row = clean(Object.fromEntries(STUDENT_COLS.map(k => [k, v[k] ?? null])))
@@ -267,6 +342,7 @@ export function AdminStudents() {
   return (
     <section>
       <PageHeader title="Students" sub="Everyone enrolled. Change a student's tutor or status straight from the list.">
+        <button className="btn ghost" onClick={() => setEditLengths(true)}>Level lengths</button>
         <AddButton onClick={() => setSheet('new')}>Add student</AddButton>
       </PageHeader>
       <Toolbar search={q} onSearch={setQ} placeholder="Search name, email, phone or country" values={f} onChange={setF} defaults={defaults}
@@ -277,7 +353,7 @@ export function AdminStudents() {
         {shown.length > 0 && <Table head={['Student', 'Level', 'Contact', 'Tutor', 'Attendance', 'Status', '']} rows={shown.map(s => ({
           key: s.id, cells: [
             <span className="cell-title"><b>{s.full_name}</b><small className="meta">{[s.goal === 'tcf' ? `TEF/TCF prep${s.exam_date ? ` · exam ${fmtDay(s.exam_date)}` : ''}` : 'General French', s.country].filter(Boolean).join(' · ')}</small></span>,
-            <Lvl l={s.level} />,
+            <span className="cell-title"><Lvl l={s.level} /><small className="meta">{progressLabel(progressOf(s.level, s.level_started_on, lengths))}</small></span>,
             <span className="meta">{s.email}{s.email && s.phone && <br />}{s.phone}</span>,
             <select aria-label="Tutor" className="inline-select" value={s.tutor_id || ''} onChange={e => update(s.id, { tutor_id: e.target.value || null }, 'Tutor changed')}>
               <option value="">Unassigned</option>{tutorOpts(tutors, true).map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select>,
@@ -287,9 +363,16 @@ export function AdminStudents() {
             <span className="actions">
               {s.user_id ? <button className={`pill ${s.login?.active === false ? 'warn' : 'ok'}`} onClick={() => setLogin(s)}>{s.login?.active === false ? 'Login paused' : 'Has login'}</button>
                 : <button className="link alt" onClick={() => setLogin(s)}>Create login</button>}
+              {LEVEL_ORDER.includes(s.level) && <button className="link alt" onClick={() => setExam(s)}>Exam</button>}
               <button className="link alt" onClick={() => setSheet(s)}>Edit</button></span>,
           ] }))} />}
       </div>
+      <Sheet open={editLengths} title="Level lengths" onClose={() => setEditLengths(false)}>
+        {editLengths && <LevelLengths lengths={lengths} onDone={() => { setEditLengths(false); reloadLengths() }} />}
+      </Sheet>
+      <Sheet open={!!exam} title={`Exam results · ${exam?.full_name}`} onClose={() => setExam(null)}>
+        {exam && <ExamResults key={exam.id} student={exam} onDone={reload} />}
+      </Sheet>
       <Sheet open={!!login} title={`Login for ${login?.full_name}`} onClose={() => setLogin(null)}>
         {login && (login.user_id ? <LoginControls key={login.id} student={login} onDone={() => { setLogin(null); reload() }} onChange={reload} />
           : <NewLogin key={login.id} student={login} onDone={reload} />)}
@@ -298,7 +381,7 @@ export function AdminStudents() {
         <Form key={sheet?.id || 'new'} onDone={() => setSheet(null)} submit={sheet === 'new' ? 'Add student' : 'Save changes'}
           initial={sheet && sheet !== 'new' ? Object.fromEntries(STUDENT_COLS.map(k => [k, sheet[k] ?? ''])) : { goal: 'general' }}
           fields={[['full_name', 'Full name'], ['email', 'Email', 'email'], ['phone', 'Phone', 'tel'], ['country', 'Country'],
-            ['level', 'Level', 'select', LEVELS], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TEF/TCF prep']]],
+            ['level', 'Level', 'select', LEVELS], ['level_started_on', 'Started this level on', 'date', null, null, 'Weekly progress counts from this date'], ['goal', 'Goal', 'select', [['general', 'General French'], ['tcf', 'TEF/TCF prep']]],
             ['exam_date', 'TEF/TCF exam date', 'date', null, v => v.goal === 'tcf'], ['hours_per_week', 'Hours per week', 'number'], ['tutor_id', 'Tutor', 'select', tutorOpts(tutors)],
             ['payment_due_date', 'Next payment due', 'date', null, null, 'Students are reminded 2 days and 1 day before']]}
           onSave={save} />

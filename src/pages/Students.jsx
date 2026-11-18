@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { sb } from '../supabase'
-import { useRows, Lvl, State, fmtDay, LEVELS } from '../ui'
+import { useRows, Lvl, State, fmtDay, LEVELS, progressOf, progressLabel } from '../ui'
 import { PageHeader, Toolbar, Table } from '../components'
 
 const attendance = s => {
@@ -9,7 +9,8 @@ const attendance = s => {
 }
 
 export default function Students() {
-  const [rows, err] = useRows(() => sb.from('students').select('id, full_name, level, goal, exam_date, hours_per_week, status, class_students(attended)').order('full_name'))
+  const [lengths] = useRows(() => sb.from('level_lengths').select('*'))
+  const [rows, err] = useRows(() => sb.from('students').select('id, full_name, level, level_started_on, goal, exam_date, hours_per_week, status, class_students(attended)').order('full_name'))
   const [q, setQ] = useState('')
   const defaults = { status: 'active' }
   const [f, setF] = useState(defaults)
@@ -25,7 +26,7 @@ export default function Students() {
         {shown.length > 0 && <Table head={['Student', 'Level', 'Goal', 'Hours/week', 'Attendance', 'Status']} rows={shown.map(s => {
           const a = attendance(s)
           return { key: s.id, cells: [
-            <b>{s.full_name}</b>, <Lvl l={s.level} />,
+            <b>{s.full_name}</b>, <span className="cell-title"><Lvl l={s.level} /><small className="meta">{progressLabel(progressOf(s.level, s.level_started_on, lengths))}</small></span>,
             s.goal === 'tcf' ? `TEF/TCF${s.exam_date ? ` · ${fmtDay(s.exam_date)}` : ''}` : 'General French',
             s.hours_per_week ?? '–',
             a === null ? <span className="meta">–</span> : <div className="barwrap"><div className="bar"><i style={{ width: `${a}%` }} /></div>{a}%</div>,
