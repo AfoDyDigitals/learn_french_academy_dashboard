@@ -454,3 +454,7 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .seg-btn.on.bad{background:#fde8e8;border-color:var(--red);color:#a3161b}
 .sheet-sub{margin:20px 0 8px;font-size:15px}
 .note.wide,.field.wide{grid-column:1/-1}
+
+/* Payments */
+.next-pay h2{margin:4px 0}
+.next-pay.alert{border-color:var(--red);background:#fff6f6}
