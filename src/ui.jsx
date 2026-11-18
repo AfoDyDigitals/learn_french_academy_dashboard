@@ -30,3 +30,17 @@ export function State({ rows, err, empty }) {
   if (!rows.length) return <p className="empty">{empty}</p>
   return null
 }
+
+// ---------- Level progress ----------
+export const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+// Week of the current level (1-based) counted from when the student started it.
+// weeks = level length incl. the assessment week (null = length not set yet)
+export function progressOf(level, startedOn, lengths) {
+  if (!startedOn || !LEVEL_ORDER.includes(level)) return null
+  const weeks = (lengths || []).find(l => l.level === level)?.weeks ?? null
+  const days = Math.floor((new Date(new Date().toDateString()) - new Date(String(startedOn).slice(0, 10))) / 864e5)
+  const raw = Math.max(1, Math.floor(days / 7) + 1)
+  const week = weeks ? Math.min(raw, weeks) : raw
+  return { week, weeks, pct: weeks ? Math.round(100 * week / weeks) : null, assessment: !!weeks && week === weeks, late: !!weeks && raw > weeks }
+}
+export const progressLabel = p => !p ? '' : p.weeks ? `Week ${p.week} of ${p.weeks}` : `Week ${p.week}`

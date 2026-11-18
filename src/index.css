@@ -435,3 +435,22 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .typing-dots i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
 .typing-dots i:nth-child(2){animation-delay:.2s}.typing-dots i:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+
+/* Level progress */
+.progress-card .bar.big{width:100%;max-width:none;height:12px;border-radius:999px;background:var(--blue-soft);overflow:hidden;margin:4px 0 8px}
+.progress-card .bar.big i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),#1d1a5e);border-radius:inherit}
+.journey{list-style:none;display:flex;gap:6px;padding:0;margin:14px 0 2px}
+.journey li{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.journey li:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--line)}
+.journey li.done:not(:last-child)::after{background:var(--blue)}
+.journey span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--surface);border:2px solid var(--line);color:var(--muted)}
+.journey .done span{background:var(--blue);border-color:var(--blue);color:#fff}
+.journey .now span{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 4px var(--blue-soft)}
+.journey .locked span{font-size:12px;opacity:.7}
+.journey small{font-size:11px;font-weight:600;color:var(--muted)}
+.seg{display:flex;gap:8px}
+.seg-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-weight:600;cursor:pointer}
+.seg-btn.on.ok{background:#e7f6ec;border-color:#2e9e5b;color:#1d6b3c}
+.seg-btn.on.bad{background:#fde8e8;border-color:var(--red);color:#a3161b}
+.sheet-sub{margin:20px 0 8px;font-size:15px}
+.note.wide,.field.wide{grid-column:1/-1}
