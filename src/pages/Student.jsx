@@ -86,7 +86,7 @@ export function StudentHome({ name }) {
         <div className="panel stat"><div className="k">Attendance</div><div className="v">{att === null ? '–' : `${att}%`}</div><div className="n">{marked.length} classes marked</div></div>
         <div className={`panel stat ${due !== null && due <= 2 ? 'alert' : ''}`}><div className="k">Next payment</div>
           <div className="v sm">{me.payment_due_date ? fmtDay(me.payment_due_date) : '–'}</div>
-          <div className="n">{me.payment_due_date ? (due < 0 ? 'Overdue' : `Due ${when(me.payment_due_date)}`) : 'Not set yet'}</div></div>
+          <div className="n">{me.payment_due_date ? (due < 0 ? 'Overdue' : `Due ${when(me.payment_due_date)}`) : 'Not set yet'} · <Link to="/payments" className="link alt">History</Link></div></div>
       </div>
       <div className="grid cols-2">
         <div className="panel">
@@ -139,6 +139,41 @@ export function StudentClasses() {
             </article>
           )
         })}</div>
+      </div>
+    </section>
+  )
+}
+
+const money = (n, c) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n)
+
+// Next payment and every payment on record
+export function StudentPayments() {
+  const [me] = useMe()
+  const [rows, err] = useRows(() => sb.from('payments').select('id, amount, currency, method, status, period_month, paid_at, created_at').order('created_at', { ascending: false }))
+  if (me === null) return null
+  if (!me) return <section><PageHeader title="Payments" /><NotLinked /></section>
+  const due = me.payment_due_date ? daysUntil(me.payment_due_date) : null
+  return (
+    <section>
+      <PageHeader title="Payments" sub="Your next payment and your payment history." />
+      <div className={`panel next-pay ${due !== null && due <= 2 ? 'alert' : ''}`}>
+        <div className="k">Next payment</div>
+        {me.payment_due_date ? <>
+          <h2>{fmtDay(me.payment_due_date)}</h2>
+          <p className="meta">{due < 0 ? `Overdue by ${-due} day${due === -1 ? '' : 's'}. Please pay to keep your classes going.` : due === 0 ? 'Due today.' : `Due ${when(me.payment_due_date)}.`} We'll remind you 2 days and 1 day before.</p>
+        </> : <p className="meta">Your next payment date hasn't been set yet.</p>}
+        <Link to="/messages" className="link alt">Questions about payment? Message us</Link>
+      </div>
+      <div className="panel">
+        <div className="panel-head"><h2>History</h2></div>
+        <State rows={rows} err={err} empty="No payments recorded yet." />
+        <div className="list">{(rows || []).map(p => (
+          <div className="row" key={p.id}>
+            <div className="grow"><b className="num">{money(p.amount, p.currency)}</b>
+              <div className="meta">{[p.period_month && `For ${new Date(p.period_month).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`,
+                fmtDay(p.paid_at || p.created_at), { paystack: 'Paystack', paypal: 'PayPal', transfer: 'Bank transfer' }[p.method]].filter(Boolean).join(' · ')}</div></div>
+            <span className={`pill ${p.status === 'paid' ? 'ok' : p.status === 'pending' ? 'warn' : 'bad'}`}>{p.status === 'paid' ? 'Paid' : p.status === 'pending' ? 'Pending' : 'Failed'}</span>
+          </div>))}</div>
       </div>
     </section>
   )

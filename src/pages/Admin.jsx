@@ -605,12 +605,18 @@ export function AdminReports() {
 
 // ---------- Payments ----------
 export function AdminPayments() {
-  const [students] = useStudents()
+  const [students, , reloadStudents] = useStudents()
   const [rows, err, reload] = useRows(() => sb.from('payments').select('*, students(full_name)').order('created_at', { ascending: false }))
   const [q, setQ] = useState('')
   const [f, setF] = useState({})
-  const [open, setOpen] = useState(false)
-  const shown = (rows || []).filter(p => has(q, p.students?.full_name, p.reference) && (!f.status || p.status === f.status) && (!f.month || p.period_month?.slice(0, 7) === f.month) && (!f.currency || p.currency === f.currency))
+  const [open, setOpen] = useState(false) // false | true | student (prefilled)
+  const today = new Date(new Date().toDateString())
+  const daysTo = d => Math.round((new Date(String(d).slice(0, 10)) - today) / 864e5)
+  const nextMonth = d => { if (!d) return ''; const x = new Date(String(d).slice(0, 10)); x.setMonth(x.getMonth() + 1); return x.toISOString().slice(0, 10) }
+  // Active students due within a week or already overdue
+  const dueSoon = (students || []).filter(s => s.status === 'active' && s.payment_due_date && daysTo(s.payment_due_date) <= 7)
+    .sort((a, b) => a.payment_due_date.localeCompare(b.payment_due_date))
+  const shown = (rows || []).filter(p => has(q, p.students?.full_name, p.reference) && (!f.student || p.student_id === f.student) && (!f.status || p.status === f.status) && (!f.month || p.period_month?.slice(0, 7) === f.month) && (!f.currency || p.currency === f.currency))
   const sum = (st, c) => shown.filter(p => p.status === st && p.currency === c).reduce((s, p) => s + Number(p.amount), 0)
   const setStatus = async (p, status) => { await sb.from('payments').update({ status, paid_at: status === 'paid' ? new Date().toISOString() : null }).eq('id', p.id); toast(`Marked ${status}`); reload() }
   return (
@@ -624,8 +630,21 @@ export function AdminPayments() {
         <div className="panel stat"><div className="k">Pending</div><div className="v sm">{shown.filter(p => p.status === 'pending').length}</div></div>
         <div className="panel stat"><div className="k">Failed</div><div className="v sm">{shown.filter(p => p.status === 'failed').length}</div></div>
       </div>
+      <div className="panel">
+        <div className="panel-head"><h2>Due & overdue</h2><span className="meta">Next 7 days · students get reminders 2 days and 1 day before</span></div>
+        {students && !dueSoon.length && <p className="empty">Nobody is due in the next 7 days.</p>}
+        <div className="list">{dueSoon.map(s => {
+          const d = daysTo(s.payment_due_date)
+          return (
+            <div className="row" key={s.id}>
+              <div className="grow"><b>{s.full_name}</b><div className="meta">{fmtDay(s.payment_due_date)} · {d < 0 ? `overdue by ${-d} day${d === -1 ? '' : 's'}` : d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`}{!s.user_id && ' · no login, contact directly'}</div></div>
+              <span className={`pill ${d < 0 ? 'bad' : d <= 2 ? 'warn' : 'info'}`}>{d < 0 ? 'Overdue' : 'Due soon'}</span>
+              <button className="link alt" onClick={() => setOpen(s)}>Log payment</button>
+            </div>)
+        })}</div>
+      </div>
       <Toolbar search={q} onSearch={setQ} placeholder="Search student or reference" values={f} onChange={setF}
-        filters={[['status', 'Status', 'select', [['paid', 'Paid'], ['pending', 'Pending'], ['failed', 'Failed']]], ['month', 'For month', 'month'], ['currency', 'Currency', 'select', ['NGN', 'USD']]]} />
+        filters={[['student', 'Student', 'select', (students || []).map(s => [s.id, s.full_name])], ['status', 'Status', 'select', [['paid', 'Paid'], ['pending', 'Pending'], ['failed', 'Failed']]], ['month', 'For month', 'month'], ['currency', 'Currency', 'select', ['NGN', 'USD']]]} />
       <div className="panel flush">
         <State rows={rows && shown} err={err} empty="No payments match. Clear the filters or log a payment." />
         {shown.length > 0 && <Table head={['Student', 'Amount', 'Method', 'For month', 'Status']} rows={shown.map(p => ({
@@ -636,17 +655,24 @@ export function AdminPayments() {
               {['paid', 'pending', 'failed'].map(x => <option key={x}>{x}</option>)}</select>,
           ] }))} />}
       </div>
-      <Sheet open={open} title="Log payment" onClose={() => setOpen(false)}>
-        <Form initial={{ currency: 'NGN', status: 'paid', method: 'paystack' }} onDone={() => setOpen(false)} submit="Log payment"
+      <Sheet open={!!open} title={open?.full_name ? `Log payment · ${open.full_name}` : 'Log payment'} onClose={() => setOpen(false)}>
+        {open && <Form key={open?.id || 'new'} onDone={() => setOpen(false)} submit="Log payment"
+          initial={{ currency: 'NGN', status: 'paid', method: 'paystack', student_id: open?.id || '', next_due: nextMonth(open?.payment_due_date) }}
           fields={[['student_id', 'Student', 'select', (students || []).map(s => [s.id, s.full_name])], ['amount', 'Amount', 'number'],
             ['currency', 'Currency', 'select', ['NGN', 'USD']], ['method', 'Method', 'select', [['paystack', 'Paystack'], ['paypal', 'PayPal'], ['transfer', 'Bank transfer']]],
-            ['period_month', 'For month', 'month'], ['reference', 'Reference (optional)'], ['status', 'Status', 'select', ['paid', 'pending', 'failed']]]}
+            ['period_month', 'For month', 'month'], ['reference', 'Reference (optional)'], ['status', 'Status', 'select', ['paid', 'pending', 'failed']],
+            ['next_due', 'Next payment due', 'date', null, v => v.status === 'paid', 'Updates the student\'s due date so reminders keep working. Leave blank to keep it as is.']]}
           onSave={async v => {
-            const row = clean({ ...v, period_month: v.period_month ? `${v.period_month}-01` : null, paid_at: v.status === 'paid' ? new Date().toISOString() : null })
+            const { next_due, ...rest } = v
+            const row = clean({ ...rest, period_month: v.period_month ? `${v.period_month}-01` : null, paid_at: v.status === 'paid' ? new Date().toISOString() : null })
             const { error } = await sb.from('payments').insert(row)
-            if (!error) { toast('Payment logged'); reload() }
-            return error
-          }} />
+            if (error) return error
+            if (v.status === 'paid' && next_due) {
+              const r = await sb.from('students').update({ payment_due_date: next_due }).eq('id', v.student_id)
+              if (r.error) return r.error
+            }
+            toast('Payment logged'); reload(); reloadStudents()
+          }} />}
       </Sheet>
     </section>
   )
