@@ -24,7 +24,7 @@ const examLinks = level => {
     delf ? [`DELF ${level} sample papers`, 'France Éducation international (official)', `${FEI}/delf-tout-public/niveau-${delf}/exemples-sujets`]
       : ['DALF C1 sample papers', 'France Éducation international (official)', `${FEI}/dalf/exemples-sujets`],
     ['TCF practice tests', 'TV5Monde · free exercises by section', 'https://apprendre.tv5monde.com/fr/tcf'],
-    ['TEF preparation', 'CCI Paris (official) · sample papers and tips', 'https://lefrancaisdesaffaires.fr/en/tests-diplomas/prepare-for-the-tef'],
+    ['TEF Canada preparation', 'CCI Paris (official) · how to prepare', 'https://www.lefrancaisdesaffaires.fr/en/candidate/test-evaluation-francais/tef-canada/preparation/'],
   ]
 }
 
