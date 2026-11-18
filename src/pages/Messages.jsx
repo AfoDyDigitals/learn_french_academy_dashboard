@@ -43,6 +43,10 @@ function Attachment({ m, url }) {
     <Icon d={CLIP} /><span><b>{m.file_name}</b><small>{m.file_size ? kb(m.file_size) : ''} · Download</small></span></a>
 }
 
+// One-line summary of a message, for reply quotes
+const gist = m => m.body?.trim() ? m.body.trim().slice(0, 140)
+  : m.file_type?.startsWith('image/') ? '📷 Photo' : m.file_type?.startsWith('audio/') ? '🎤 Voice note' : `📎 ${m.file_name || 'File'}`
+
 function Chat({ thread, me, title, onBack }) {
   const [msgs, setMsgs] = useState(null)
   const [text, setText] = useState('')
@@ -55,6 +59,14 @@ function Chat({ thread, me, title, onBack }) {
   const [urls, setUrls] = useState({})
   const [rec, setRec] = useState(null) // { recorder, started, secs } while recording
   const [secs, setSecs] = useState(0)
+  const [pending, setPending] = useState(null) // file chosen, waiting for a caption: { file, preview }
+  const [replyTo, setReplyTo] = useState(null) // message being replied to
+  const [typing, setTyping] = useState(false) // the other side is typing
+  const channel = useRef(null)
+  const lastTyped = useRef(0)
+  const typingTimer = useRef(null)
+  // Who wrote a message, as shown in reply quotes
+  const who = m => m.sender === me ? 'You' : m.sender === thread ? title : 'Academy team'
   // Phones: the chat fills the visible screen and follows the on-screen keyboard
   useEffect(() => {
     const vv = window.visualViewport, el = box.current
@@ -82,11 +94,38 @@ function Chat({ thread, me, title, onBack }) {
     const ch = sb.channel(`thread-${thread}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `thread_user=eq.${thread}` }, ({ new: m }) => {
         setMsgs(list => list && !list.some(x => x.id === m.id) ? [...list, m] : list)
-        if (m.sender !== me) markRead()
-      }).subscribe()
-    return () => { sb.removeChannel(ch) }
+        if (m.sender !== me) { markRead(); setTyping(false) }
+      })
+      // "Typing…": short live signals, never stored
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.user === me) return
+        setTyping(true); clearTimeout(typingTimer.current)
+        typingTimer.current = setTimeout(() => setTyping(false), 3500)
+      })
+      .subscribe()
+    channel.current = ch
+    return () => { sb.removeChannel(ch); clearTimeout(typingTimer.current); setTyping(false) }
   }, [thread]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [msgs])
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [msgs, typing])
+  // Tell the other side we're typing, at most every 2 seconds
+  const ping = () => {
+    if (Date.now() - lastTyped.current < 2000) return
+    lastTyped.current = Date.now()
+    channel.current?.send({ type: 'broadcast', event: 'typing', payload: { user: me } })
+  }
+  const pick = file => {
+    if (!file) return
+    if (file.size > MAX_MB * 1048576) return setErr(`That file is ${kb(file.size)}. The limit is ${MAX_MB} MB.`)
+    setErr(''); setPending({ file, preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null })
+    input.current?.focus()
+  }
+  const clearPending = () => { if (pending?.preview) URL.revokeObjectURL(pending.preview); setPending(null) }
+  const reset = () => { setText(''); setReplyTo(null); if (input.current) input.current.style.height = '' }
+  const jump = id => {
+    const el = document.getElementById(`m-${id}`)
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200)
+  }
   // Private files: get short-lived links for any attachment we haven't loaded yet
   useEffect(() => {
     const need = (msgs || []).map(m => m.file_path).filter(p => p && !urls[p])
@@ -104,11 +143,11 @@ function Chat({ thread, me, title, onBack }) {
     const path = `${thread}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, '_').slice(-80)}`
     const up = await sb.storage.from('attachments').upload(path, file, { contentType: file.type || 'application/octet-stream' })
     if (up.error) { setBusy(false); return setErr(`Not sent: ${up.error.message}`) }
-    const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body: text.trim(),
+    const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body: text.trim(), reply_to: replyTo?.id || null,
       file_path: path, file_name: file.name, file_type: file.type || 'application/octet-stream', file_size: file.size }).select().single()
     setBusy(false)
     if (error) { sb.storage.from('attachments').remove([path]); return setErr(`Not sent: ${error.message}`) }
-    setText(''); if (input.current) input.current.style.height = ''
+    reset(); clearPending()
     setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
   }
 
@@ -135,29 +174,50 @@ function Chat({ thread, me, title, onBack }) {
 
   async function send(e) {
     e.preventDefault()
+    if (busy) return
+    if (pending) return sendFile(pending.file)
     const body = text.trim()
     if (!body) return
     setBusy(true); setErr('')
-    const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body }).select().single()
+    const { data, error } = await sb.from('messages').insert({ thread_user: thread, sender: me, body, reply_to: replyTo?.id || null }).select().single()
     setBusy(false)
     if (error) return setErr(`Not sent: ${error.message}`)
-    setText(''); if (input.current) input.current.style.height = ''; input.current?.focus(); setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
+    reset(); input.current?.focus(); setMsgs(list => list.some(x => x.id === data.id) ? list : [...list, data])
   }
 
   return (
     <div className="panel chat" ref={box}>
-      <div className="chat-head">{onBack && <button className="chat-back" onClick={onBack} aria-label="Back">←</button>}<b>{title}</b></div>
+      <div className="chat-head">{onBack && <button className="chat-back" onClick={onBack} aria-label="Back">←</button>}
+        <span className="chat-title"><b>{title}</b>{typing && <small className="typing-label">typing…</small>}</span></div>
       <div className="chat-body">
         {msgs === null ? <p className="meta">Loading…</p>
           : !msgs.length ? <p className="empty">No messages yet. Say hello 👋</p>
-          : msgs.map(m => (
-            <div key={m.id} className={`bubble ${m.sender === me ? 'mine' : ''}`}>
-              {m.file_path && <Attachment m={m} url={urls[m.file_path]} />}
-              {m.body && <p>{m.body}</p>}<small>{stamp(m.created_at)}{m.sender === me && m.read_at ? ' · Seen' : ''}</small>
-            </div>))}
+          : msgs.map(m => {
+            const q = m.reply_to && msgs.find(x => x.id === m.reply_to)
+            return (
+              <div key={m.id} id={`m-${m.id}`} className={`msg ${m.sender === me ? 'mine' : ''}`}>
+                <div className="bubble">
+                  {m.reply_to && <button type="button" className="quote" onClick={() => q && jump(q.id)}>
+                    <b>{q ? who(q) : 'Message'}</b><span>{q ? gist(q) : 'Original message not available'}</span></button>}
+                  {m.file_path && <Attachment m={m} url={urls[m.file_path]} />}
+                  {m.body && <p>{m.body}</p>}<small>{stamp(m.created_at)}{m.sender === me && m.read_at ? ' · Seen' : ''}</small>
+                </div>
+                <button type="button" className="reply-btn" aria-label="Reply to this message" title="Reply"
+                  onClick={() => { setReplyTo(m); input.current?.focus() }}>↩</button>
+              </div>
+            )
+          })}
+        {typing && <div className="msg"><div className="bubble typing-dots" aria-label={`${title} is typing`}><i /><i /><i /></div></div>}
         <div ref={end} />
       </div>
       {err && <p className="note bad">{err}</p>}
+      {replyTo && !rec && <div className="compose-bar">
+        <div className="quote"><b>Replying to {who(replyTo) === 'You' ? 'yourself' : who(replyTo)}</b><span>{gist(replyTo)}</span></div>
+        <button type="button" className="bar-x" aria-label="Cancel reply" onClick={() => setReplyTo(null)}>×</button></div>}
+      {pending && !rec && <div className="compose-bar">
+        {pending.preview ? <img className="pending-img" src={pending.preview} alt="" /> : <span className="pending-icon"><Icon d={CLIP} /></span>}
+        <div className="grow pending-name"><b>{pending.file.name}</b><small>{kb(pending.file.size)} · add a caption or tap Send</small></div>
+        <button type="button" className="bar-x" aria-label="Remove attachment" onClick={clearPending}>×</button></div>}
       {rec ? (
         <div className="composer recording">
           <button type="button" className="link danger" onClick={() => stopRec(true)}>Cancel</button>
@@ -167,12 +227,12 @@ function Chat({ thread, me, title, onBack }) {
       ) : (
         <form className="composer" onSubmit={send}>
           <input ref={picker} type="file" hidden accept="image/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
-            onChange={e => { sendFile(e.target.files[0]); e.target.value = '' }} />
+            onChange={e => { pick(e.target.files[0]); e.target.value = '' }} />
           <button type="button" className="icon-btn" aria-label="Attach a photo or file" disabled={busy} onClick={() => picker.current.click()}><Icon d={CLIP} /></button>
-          <textarea ref={input} rows={1} placeholder={busy ? 'Sending…' : 'Write a message…'} value={text} onChange={e => { setText(e.target.value); grow(e.target) }}
+          <textarea ref={input} rows={1} placeholder={busy ? 'Sending…' : pending ? 'Add a caption…' : 'Write a message…'} value={text} onChange={e => { setText(e.target.value); grow(e.target); ping() }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !matchMedia('(pointer:coarse)').matches) send(e) }} />
-          {text.trim()
-            ? <button className="btn" disabled={busy}>Send</button>
+          {text.trim() || pending
+            ? <button className="btn" disabled={busy}>{busy ? 'Sending…' : 'Send'}</button>
             : <button type="button" className="icon-btn mic" aria-label="Record a voice note" disabled={busy} onClick={startRec}><Icon d={MIC} /></button>}
         </form>
       )}
