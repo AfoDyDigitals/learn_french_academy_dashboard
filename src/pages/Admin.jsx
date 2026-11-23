@@ -679,7 +679,7 @@ export function AdminPayments() {
 }
 
 // ---------- Library ----------
-const RES_COLS = ['title', 'level', 'skill', 'source', 'url']
+const RES_COLS = ['title', 'level', 'skill', 'week_no', 'source', 'url']
 export function AdminLibrary() {
   const [rows, err, reload] = useRows(() => sb.from('resources').select('*').order('level').order('title'))
   const [q, setQ] = useState('')
@@ -703,17 +703,17 @@ export function AdminLibrary() {
         filters={[['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS]]} />
       <div className="panel flush">
         <State rows={rows && shown} err={err} empty="No resources match." />
-        {shown.length > 0 && <Table head={['Resource', 'Level', 'Skill', 'Source', '']} rows={shown.map(r => ({
+        {shown.length > 0 && <Table head={['Resource', 'Level', 'Skill', 'Week', 'Source', '']} rows={shown.map(r => ({
           key: r.id, cells: [
             <a className="cell-title" href={r.url} target="_blank" rel="noreferrer"><b>{r.title}</b></a>,
-            <Lvl l={r.level} />, r.skill, r.source || '–',
+            <Lvl l={r.level} />, r.skill, r.week_no || '–', r.source || '–',
             <span className="actions"><button className="link alt" onClick={() => setSheet(r)}>Edit</button><ConfirmButton onConfirm={() => remove(r.id)}>Remove</ConfirmButton></span>,
           ] }))} />}
       </div>
       <Sheet open={!!sheet} title={sheet === 'new' ? 'Add resource' : `Edit ${sheet?.title}`} onClose={() => setSheet(null)}>
         <Form key={sheet?.id || 'new'} onDone={() => setSheet(null)} submit={sheet === 'new' ? 'Add resource' : 'Save changes'}
           initial={sheet && sheet !== 'new' ? Object.fromEntries(RES_COLS.map(k => [k, sheet[k] ?? ''])) : { skill: 'Listening' }}
-          fields={[['title', 'Title'], ['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS], ['source', 'Source', 'text', null, null, 'For example: TV5Monde, RFI Savoirs'], ['url', 'Link', 'url']]}
+          fields={[['title', 'Title'], ['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS], ['week_no', 'Syllabus week', 'number', null, null, 'Optional. Links this to that week\'s topic so students get it in their daily practice'], ['source', 'Source', 'text', null, null, 'For example: TV5Monde, RFI Savoirs'], ['url', 'Link', 'url']]}
           onSave={save} />
       </Sheet>
     </section>

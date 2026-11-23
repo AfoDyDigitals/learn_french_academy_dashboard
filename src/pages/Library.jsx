@@ -6,7 +6,7 @@ import { PageHeader, Toolbar, ExamPractice } from '../components'
 const SKILLS = ['Listening', 'Speaking', 'Reading', 'Writing', 'Grammar']
 
 // Tutors see everything; students open on their own level with exam links for it
-export default function Library({ level, exam = EXAM_PRACTICE, sub }) {
+export default function Library({ level, exam = EXAM_PRACTICE, sub, extra }) {
   const [q, setQ] = useState('')
   const [f, setF] = useState(level ? { level } : {})
   const [rows, err] = useRows(() => sb.from('resources').select('*').order('level').order('title'))
@@ -16,6 +16,7 @@ export default function Library({ level, exam = EXAM_PRACTICE, sub }) {
   return (
     <section>
       <PageHeader title={level ? 'Practice' : 'Library'} sub={sub || 'Free listening and speaking material, sorted by level and skill.'} />
+      {extra}
       <ExamPractice links={exam} />
       <Toolbar search={q} onSearch={setQ} placeholder="Search topics, e.g. au restaurant" values={f} onChange={setF}
         filters={[['level', 'Level', 'select', LEVELS], ['skill', 'Skill', 'select', SKILLS]]} />

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { sb } from '../supabase'
 import { useRows, Lvl, lvlLabel, fmtDay, fmtTime, State, greeting, LEVEL_ORDER, progressOf, progressLabel } from '../ui'
-import { PageHeader, Tabs } from '../components'
+import { PageHeader, Tabs, toast } from '../components'
 import Library from './Library'
 
 // The signed-in student's own record (RLS returns only theirs)
@@ -79,6 +79,7 @@ export function StudentHome({ name }) {
           {next.meet_url && <a className="btn" href={next.meet_url} target="_blank" rel="noreferrer">Join class</a>}
         </>}
       </div>
+      <TodayPractice />
       <Progress me={me} />
       <div className="stats three">
         <div className="panel stat"><div className="k">Your level</div><div className="v"><Lvl l={me.level} /></div>
@@ -173,5 +174,73 @@ export function StudentPayments() {
 export function StudentPractice() {
   const [me] = useMe()
   if (!me) return me === null ? null : <section><PageHeader title="Practice" /><NotLinked /></section>
-  return <Library level={me.level} exam={examLinks(me.level)} sub={`Free listening, speaking and exam practice. Showing ${lvlLabel(me.level)} first; clear the filter to see every level.`} />
+  return <Library level={me.level} extra={<TodayPractice />} exam={examLinks(me.level)} sub={`Free listening, speaking and exam practice. Showing ${lvlLabel(me.level)} first; clear the filter to see every level.`} />
+}
+
+// Daily practice: streak, today's topic (from the latest class), resources tagged to that syllabus week
+const useMyPractice = () => useRows(() => sb.rpc('my_practice'))
+const split = t => { const [fr, en] = String(t || '').split(' — '); return [fr, en] }
+const topicUrl = p => `/practice/topic/${p.level}/${p.week_no}`
+
+function Week({ days }) {
+  const done = new Set(days || []), today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' }))
+  return <div className="week-dots" aria-label="Last 7 days">{Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - 6 + i)
+    const k = d.toLocaleDateString('en-CA'), on = done.has(k)
+    return <span key={k} className={on ? 'on' : ''} title={k}><i>{on ? '✓' : ''}</i><small>{d.toLocaleDateString('en-GB', { weekday: 'narrow' })}</small></span>
+  })}</div>
+}
+
+function TodayPractice() {
+  const [p] = useMyPractice()
+  if (!p?.level) return null
+  const [fr, en] = split(p.topic)
+  return (
+    <div className={`panel today-practice ${p.done_today ? 'done' : ''}`}>
+      <div className="streak"><b>{p.streak}</b><span>day streak</span></div>
+      <div className="grow"><div className="k">{p.done_today ? 'Practised today ✓' : "Today's practice"}</div>
+        <h2>{fr}</h2>{en && <p className="meta">{en}</p>}</div>
+      <Link className="btn" to={topicUrl(p)}>{p.done_today ? 'Practise more' : 'Practise now'}</Link>
+    </div>
+  )
+}
+
+export function PracticeToday() {
+  const [p] = useMyPractice()
+  if (p === null) return null
+  return <Navigate to={p?.level ? topicUrl(p) : '/practice'} replace />
+}
+
+export function TopicPractice() {
+  const { level, week } = useParams()
+  const [p, , reloadP] = useMyPractice()
+  const [syl] = useRows(() => sb.from('syllabus').select('topic').eq('level', level).eq('week_no', week).maybeSingle(), [level, week])
+  const [res, err] = useRows(() => sb.from('resources').select('*').eq('level', level).order('title'), [level])
+  const [fr, en] = split(syl?.topic)
+  const current = p?.level === level && String(p?.week_no) === week
+  const mine = (res || []).filter(r => String(r.week_no) === week), more = (res || []).filter(r => String(r.week_no) !== week).slice(0, 6)
+  const log = async () => {
+    const { data, error } = await sb.rpc('log_practice', { p_level: level, p_week: +week })
+    if (!error && !p?.done_today) { toast(`Practice logged · ${data}-day streak 🔥`); reloadP() }
+  }
+  const card = r => (
+    <a className="res" key={r.id} href={r.url} target="_blank" rel="noreferrer" onClick={log}>
+      <div className="tags"><Lvl l={r.level} /><span className="tag">{r.skill}</span></div>
+      <h3>{r.title}</h3><div className="src">{r.source || 'Open'} ↗</div>
+    </a>)
+  return (
+    <section>
+      <PageHeader title={current ? "Today's practice" : 'Practice'} sub={`${lvlLabel(level)} · Week ${week}`} />
+      <div className={`panel today-practice ${p?.done_today ? 'done' : ''}`}>
+        <div className="streak"><b>{p?.streak ?? 0}</b><span>day streak</span></div>
+        <div className="grow"><h2>{fr || 'Your topic'}</h2>{en && <p className="meta">{en}</p>}<Week days={p?.week} /></div>
+        {p?.done_today ? <span className="pill ok">Done today</span> : <button className="btn" onClick={log}>Mark today as done</button>}
+      </div>
+      <h2 className="sec">For this topic</h2>
+      <State rows={res && mine} err={err} empty="No activities are tagged to this topic yet. Try the ones below for your level." />
+      <div className="cards">{mine.map(card)}</div>
+      {more.length > 0 && <><h2 className="sec">More for {lvlLabel(level)}</h2><div className="cards">{more.map(card)}</div></>}
+      <p className="meta" style={{ marginTop: 18 }}><Link to="/practice" className="link alt">See all practice materials</Link></p>
+    </section>
+  )
 }
