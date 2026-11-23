@@ -10,7 +10,7 @@ import Report from './pages/Report'
 import { AdminOverview, AdminClasses, AdminStudents, AdminTutors, AdminReports, AdminPayments, AdminLibrary } from './pages/Admin'
 import Account from './pages/Account'
 import { Messages, AdminMessages, useUnread } from './pages/Messages'
-import { StudentHome, StudentClasses, StudentPractice, StudentPayments } from './pages/Student'
+import { StudentHome, StudentClasses, StudentPractice, StudentPayments, PracticeToday, TopicPractice } from './pages/Student'
 import SetPassword from './pages/SetPassword'
 import { enablePush, pushEnabled } from './push'
 import { Toaster } from './components'
@@ -135,6 +135,8 @@ export default function App() {
             <Route path="/" element={<StudentHome name={name} />} />
             <Route path="/classes" element={<StudentClasses />} />
             <Route path="/practice" element={<StudentPractice />} />
+            <Route path="/practice/today" element={<PracticeToday />} />
+            <Route path="/practice/topic/:level/:week" element={<TopicPractice />} />
             <Route path="/payments" element={<StudentPayments />} />
             <Route path="/messages" element={isAdmin ? <AdminMessages me={profile.id} /> : <Messages me={profile.id} />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
