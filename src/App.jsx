@@ -7,7 +7,7 @@ import Library from './pages/Library'
 import Classes from './pages/Classes'
 import Students from './pages/Students'
 import Report from './pages/Report'
-import { AdminOverview, AdminClasses, AdminStudents, AdminTutors, AdminReports, AdminPayments, AdminLibrary } from './pages/Admin'
+import { AdminOverview, AdminClasses, AdminStudents, AdminTutors, AdminReports, AdminPayments, AdminLibrary, AdminEnquiries } from './pages/Admin'
 import Account from './pages/Account'
 import { Messages, AdminMessages, useUnread } from './pages/Messages'
 import { StudentHome, StudentClasses, StudentPractice, StudentPayments, PracticeToday, TopicPractice } from './pages/Student'
@@ -17,6 +17,7 @@ import { Toaster } from './components'
 
 const ICON = {
   '/': <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
+  '/enquiries': <path d="M4 6h16v12H4zM4 7l8 6 8-6" />,
   '/library': <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7" />,
   '/classes': <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
   '/students': <><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3" /></>,
@@ -33,7 +34,7 @@ const NavIcon = ({ to }) => <svg viewBox="0 0 24 24" fill="none" stroke="current
 // Tutors and admins get completely separate menus and pages
 const TUTOR_NAV = [['/', 'Today'], ['/messages', 'Messages'], ['/library', 'Library'], ['/classes', 'Classes'], ['/students', 'My students'], ['/report', 'Class report']]
 const STUDENT_NAV = [['/', 'Home'], ['/messages', 'Messages'], ['/classes', 'My classes'], ['/practice', 'Practice'], ['/payments', 'Payments'], ['/account', 'Account']]
-const ADMIN_NAV = [['/', 'Overview'], ['/messages', 'Messages'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library']]
+const ADMIN_NAV = [['/', 'Overview'], ['/messages', 'Messages'], ['/classes', 'Classes'], ['/students', 'Students'], ['/tutors', 'Tutors'], ['/reports', 'Reports'], ['/payments', 'Payments'], ['/library', 'Library'], ['/enquiries', 'Enquiries']]
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -126,6 +127,7 @@ export default function App() {
             <Route path="/reports" element={<AdminReports />} />
             <Route path="/payments" element={<AdminPayments />} />
             <Route path="/library" element={<AdminLibrary />} />
+            <Route path="/enquiries" element={<AdminEnquiries />} />
             <Route path="/messages" element={isAdmin ? <AdminMessages me={profile.id} /> : <Messages me={profile.id} />} />
             <Route path="/account" element={<Account email={session.user.email} />} />
             <Route path="*" element={<Navigate to="/" />} />
