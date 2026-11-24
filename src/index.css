@@ -41,8 +41,9 @@ p{margin:0}
 /* ---------- Shell ---------- */
 .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;min-height:100dvh}
 aside{background:var(--rail);color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;height:100dvh;overflow-y:auto}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;line-height:1.15;padding:0 6px}
-.mark{height:42px;width:auto;flex:none;background:#fff;border-radius:12px;padding:6px 8px}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:16px;line-height:1;letter-spacing:.2px;padding:0 6px}
+.brand small{display:block;font-size:10px;font-weight:700;letter-spacing:5px;margin-top:4px}
+.mark{height:42px;width:auto;flex:none}
 nav{display:flex;flex-direction:column;gap:2px}
 nav a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,.85);font-weight:600}
 nav a svg{width:20px;height:20px;flex:none;opacity:.9}
@@ -258,7 +259,8 @@ legend{font-weight:600;font-size:14px;padding:0 4px}
 .login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
 .login .panel{width:100%;max-width:400px;margin:0;padding:28px}
 .login form{display:flex;flex-direction:column;gap:2px}
-.login img{align-self:flex-start;margin-bottom:10px}
+.login .logo-light{align-self:flex-start;height:52px;width:auto;margin-bottom:14px}
+.login .logo-dark{display:none;align-self:flex-start;margin:0 0 14px;padding:0}
 .login .sub{margin-bottom:16px}
 .login .btn{margin-top:4px}
 .login .link.alt{align-self:center;margin-top:12px}
@@ -474,3 +476,6 @@ button.pill{border:0;cursor:pointer;font-family:inherit}
 .week-dots small{font-size:11px;color:var(--muted)}
 h2.sec{font-size:17px;margin:22px 0 12px}
 @media (max-width:600px){.today-practice .btn{width:100%;justify-content:center}}
+
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .login .logo-light{display:none}:root:not([data-theme="light"]) .login .logo-dark{display:flex}}
+:root[data-theme="dark"] .login .logo-light{display:none}:root[data-theme="dark"] .login .logo-dark{display:flex}

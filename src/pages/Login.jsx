@@ -1,3 +1,4 @@
+import { Logo } from '../components'
 import { useState } from 'react'
 import { sb } from '../supabase'
 import PasswordInput from '../PasswordInput'
@@ -34,7 +35,7 @@ export default function Login() {
     <div className="login">
       {mode === 'signin' ? (
         <form className="panel" onSubmit={signIn}>
-          <img src="/logo.png" alt="" height="64" />
+          <Logo />
           <h1>Sign in</h1>
           <p className="sub">Learn French Academy</p>
           <div className="field"><label htmlFor="em">Email</label><input id="em" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
@@ -45,7 +46,7 @@ export default function Login() {
         </form>
       ) : (
         <form className="panel" onSubmit={sendReset}>
-          <img src="/logo.png" alt="" height="64" />
+          <Logo />
           <h1>Reset password</h1>
           <p className="sub">Enter your email and we'll send you a link to set a new password.</p>
           <div className="field"><label htmlFor="fem">Email</label><input id="fem" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></div>

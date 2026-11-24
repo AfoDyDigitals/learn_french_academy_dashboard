@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { sb } from './supabase'
 import Login from './pages/Login'
+import { Logo } from './components'
 import Today from './pages/Today'
 import Library from './pages/Library'
 import Classes from './pages/Classes'
@@ -81,7 +82,7 @@ export default function App() {
   if (!isAdmin && !profile.active) return (
     <div className="login">
       <div className="panel">
-        <img src="/logo.png" alt="" height="64" />
+        <Logo />
         <h1>Your access is paused</h1>
         <p className="sub">{isStudent ? 'Your account is on hold. Please contact the academy to turn it back on.' : 'Your tutor account is on hold. An admin will turn it back on when your contract resumes. Your classes and reports are kept.'}</p>
         <button className="btn" onClick={signOut}>Sign out</button>
@@ -92,7 +93,7 @@ export default function App() {
   return (
     <div className="shell">
       <aside>
-        <div className="brand"><img className="mark" src="/logo.png" alt="Learn French Academy logo" /><span>Learn French<br />Academy</span></div>
+        <div className="brand" aria-label="Learn French Academy"><img className="mark" src="https://learnfrenchacademy.com/img/icon_white.png" alt="" /><span>LEARN FRENCH<small>ACADEMY</small></span></div>
         <button className="menu-btn" aria-label={unread ? `Open menu, ${unread} unread messages` : 'Open menu'} aria-expanded={menu} aria-controls="drawer" onClick={() => setMenu(true)}>
           {unread > 0 && <span className="badge dot">{unread}</span>}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>

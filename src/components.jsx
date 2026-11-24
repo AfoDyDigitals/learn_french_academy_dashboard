@@ -155,3 +155,10 @@ export function ExamPractice({ links }) {
 export function Empty({ title, children }) {
   return <div className="empty-state"><b>{title}</b>{children && <p>{children}</p>}</div>
 }
+
+// One logo system: full-colour primary logo on light surfaces, white icon + white wordmark on blue/dark ones
+export const Logo = () => <>
+  <img className="logo-light" src="https://learnfrenchacademy.com/img/logo.png" alt="Learn French Academy" width="360" height="112" />
+  <span className="brand logo-dark" aria-hidden="true"><img className="mark" src="https://learnfrenchacademy.com/img/icon_white.png" alt="" /><span>LEARN FRENCH<small>ACADEMY</small></span></span>
+</>
+
