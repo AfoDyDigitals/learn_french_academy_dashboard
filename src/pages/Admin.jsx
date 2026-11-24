@@ -719,3 +719,32 @@ export function AdminLibrary() {
     </section>
   )
 }
+
+// Website contact-form enquiries
+const ENQ_STATUS = [['new', 'New'], ['contacted', 'Contacted'], ['enrolled', 'Enrolled'], ['closed', 'Closed']]
+export function AdminEnquiries() {
+  const [rows, err, reload] = useRows(() => sb.from('enquiries').select('*').order('created_at', { ascending: false }))
+  const [tab, setTab] = useState('new')
+  const setStatus = async (id, status) => { await sb.from('enquiries').update({ status }).eq('id', id); toast('Status updated'); reload() }
+  const shown = (rows || []).filter(r => tab === 'all' || r.status === tab)
+  const wa = p => `https://wa.me/${String(p).replace(/\D/g, '')}`
+  return (
+    <section>
+      <PageHeader title="Enquiries" sub="Messages from the website contact form. Reply by email or WhatsApp, then update the status." />
+      <Tabs value={tab} onChange={setTab} tabs={[...ENQ_STATUS.map(([k, l]) => [k, `${l}${rows ? ` (${rows.filter(r => r.status === k).length})` : ''}`]), ['all', 'All']]} />
+      <div className="panel">
+        <State rows={rows && shown} err={err} empty={tab === 'new' ? 'No new enquiries.' : 'Nothing here.'} />
+        <div className="list">{shown.map(r => (
+          <article className="row report" key={r.id}>
+            <div className="grow">
+              <div className="report-head"><b>{r.name}</b><span className="meta">{fmtDay(r.created_at)} {fmtTime(r.created_at)}{r.country ? ` · ${r.country}` : ''}</span></div>
+              {r.programme && <p className="meta">{r.programme}</p>}
+              {r.message && <p>{r.message}</p>}
+              <p className="meta"><a className="link alt" href={`mailto:${r.email}`}>{r.email}</a>{r.phone && <> · <a className="link alt" href={wa(r.phone)} target="_blank" rel="noreferrer">WhatsApp {r.phone}</a></>}</p>
+            </div>
+            <select value={r.status} onChange={e => setStatus(r.id, e.target.value)} aria-label="Status">{ENQ_STATUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          </article>))}</div>
+      </div>
+    </section>
+  )
+}
